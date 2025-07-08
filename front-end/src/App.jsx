@@ -1,0 +1,46 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LogIn from './Pages/LogIn';
+import Travels from './Pages/Travels';
+import AdminDashboard from './admin/travel/CreateTravel';
+import Dashboard from './Pages/Dashboard';
+import Statistics from './Pages/Statistics';
+import MainDashboard from './Pages/MainDashboard';
+import AppointmentDashboard from './Pages/appointment/AppointmentDashboard';
+import CreateAppointment from './admin/appointment/CreateAppointment';
+import EditAppointment from './admin/appointment/EditAppointment';
+import AppointmentStatistics from './Pages/appointment/AppointmentStatistics';
+import AppointmentDetails from './Pages/appointment/AppointmentDashboard';
+import CreateTravel from './admin/travel/CreateTravel';
+import MainDashboardAdmin from './admin/MainDashboardAdmin';
+
+const App = () => {
+  return (
+    <Router>
+     
+        <Routes>
+          <Route path="/travelsDashboard" element={<Dashboard/>} />
+          <Route path="/statistics" element={<Statistics />} />
+          <Route path="/travels" element={<Travels/>} />
+
+        {/*admin travel */}
+          <Route path="/createTravel" element={<CreateTravel/>} />
+          <Route path="/" element={<MainDashboard/>} />
+        
+        {/*SDS appointment system*/}
+        <Route path="/appointmentDetails" element={<AppointmentDetails/>} />
+        <Route path="/appointmentStatistics" element={<AppointmentStatistics/>} />
+
+         {/*admin appointment system*/}
+          <Route path="/createAppointment" element={<CreateAppointment />} />
+          <Route path="/editAppointment" element={<EditAppointment />} />
+
+          <Route path="/admin" element={<MainDashboardAdmin />} />
+
+        </Routes>
+
+    </Router>
+  );
+};
+
+export default App;
