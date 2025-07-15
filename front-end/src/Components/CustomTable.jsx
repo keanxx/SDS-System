@@ -27,7 +27,7 @@ const CustomTable = ({ searchQuery }) => {
   // Fetch travel data from API
   useEffect(() => {
     setLoading(true);
-    axios.get('http://192.168.83.141:3000/travels')
+    axios.get('http://localhost:5000/api/travels')
       .then(response => {
         setTravels(response.data);
         setLoading(false);
@@ -126,7 +126,21 @@ const CustomTable = ({ searchQuery }) => {
                     <TableCell sx={{ width: '20%', whiteSpace: 'nowrap' }}>
   {travel.fullname || 'N/A'}
 </TableCell>
-                    <TableCell>{travel.Purpose || travel.PositionDesignation || 'N/A'}</TableCell>
+                    <TableCell>
+  {travel.attachment ? (
+    <a 
+      href={`http://localhost:5000${travel.attachment}`} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      style={{ color: 'blue', textDecoration: 'underline' }}
+    >
+      {travel.Purpose || 'View PDF'}
+    </a>
+  ) : (
+    travel.Purpose || 'None'
+  )}
+</TableCell>
+
                     <TableCell>{travel.Destination || 'N/A'}</TableCell>
                     <TableCell
                       sx={{ width: '20%', whiteSpace: 'nowrap' }}>

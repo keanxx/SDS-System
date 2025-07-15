@@ -7,7 +7,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  DialogContentText
+  DialogContentText,
+  CircularProgress
 } from '@mui/material';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
@@ -16,7 +17,10 @@ const BulkAppointmentUpload = () => {
   const fileInputRef = useRef();
   const [action, setAction] = useState(null); // 'upload' or 'update'
   const [selectedFile, setSelectedFile] = useState(null);
-  const [openConfirm, setOpenConfirm] = useState(false);
+  const [parsedData, setParsedData] = useState([]);
+  const [previewData, setPreviewData] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const formatDate = (value) => {
     if (!value) return null;
@@ -25,22 +29,60 @@ const BulkAppointmentUpload = () => {
       if (!parsed) return null;
       return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
     }
-
     const date = new Date(value);
-    if (isNaN(date)) return null;
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return isNaN(date) ? null : date.toISOString().split('T')[0];
   };
 
-  const processFile = async (file) => {
+  const validateColumns = (rows) => {
+    const requiredColumns = [
+      'Name',
+      'PositionTitle',
+      'SchoolOffice',
+      'District',
+      'StatusOfAppointment',
+      'NatureAppointment',
+      'ItemNo',
+      'DateSigned',
+      'remarks'
+    ];
+    const missingColumns = requiredColumns.filter(
+      (col) => !rows[0]?.hasOwnProperty(col)
+    );
+    return missingColumns;
+  };
+
+  const parseFile = async (file) => {
+    setLoading(true); // Show loading indicator
     const reader = new FileReader();
     reader.onload = async (e) => {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet);
+      let rows = [];
 
-      const formattedRows = rows.map(row => ({
-        id: row.id || undefined,
+      if (file.name.endsWith('.csv')) {
+        const text = new TextDecoder().decode(data);
+        const lines = text.split('\n');
+        const headers = lines[0].split(',');
+        rows = lines.slice(1).map((line) => {
+          const values = line.split(',');
+          return headers.reduce((obj, header, index) => {
+            obj[header.trim()] = values[index]?.trim() || '';
+            return obj;
+          }, {});
+        });
+      } else {
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(sheet);
+      }
+
+      const missingColumns = validateColumns(rows);
+      if (missingColumns.length > 0) {
+        alert(`Missing mandatory columns: ${missingColumns.join(', ')}`);
+        setLoading(false); // Hide loading indicator
+        return;
+      }
+
+      const formattedRows = rows.map((row) => ({
         Name: row.Name || '',
         PositionTitle: row.PositionTitle || '',
         SchoolOffice: row.SchoolOffice || '',
@@ -48,31 +90,15 @@ const BulkAppointmentUpload = () => {
         StatusOfAppointment: row.StatusOfAppointment || '',
         NatureAppointment: row.NatureAppointment || '',
         ItemNo: row.ItemNo || '',
-        DateSigned: formatDate(row.DateSigned)
+        DateSigned: formatDate(row.DateSigned),
+        remarks: row.remarks || '' // Add remarks field
       }));
 
-      try {
-        if (action === 'upload') {
-          const res = await axios.post('http://localhost:5000/api/appointments/bulk-json', formattedRows, {
-            headers: { 'Content-Type': 'application/json' }
-          });
-          alert(res.data.message || 'Upload successful!');
-        } else if (action === 'update') {
-          const res = await axios.put('http://localhost:5000/api/appointments/bulk-update', formattedRows, {
-            headers: { 'Content-Type': 'application/json' }
-          });
-          alert(res.data.message || 'Update successful!');
-        }
-      } catch (err) {
-        console.error(`${action} failed:`, err);
-        alert(`${action.charAt(0).toUpperCase() + action.slice(1)} failed.`);
-      }
-
-      fileInputRef.current.value = '';
-      setAction(null);
-      setSelectedFile(null);
+      setParsedData(formattedRows);
+      setPreviewData(formattedRows.slice(0, 5));
+      setOpenDialog(true);
+      setLoading(false); // Hide loading indicator
     };
-
     reader.readAsArrayBuffer(file);
   };
 
@@ -80,22 +106,8 @@ const BulkAppointmentUpload = () => {
     const file = e.target.files[0];
     if (file) {
       setSelectedFile(file);
-      setOpenConfirm(true);
+      parseFile(file);
     }
-  };
-
-  const handleConfirm = () => {
-    setOpenConfirm(false);
-    if (selectedFile && action) {
-      processFile(selectedFile);
-    }
-  };
-
-  const handleCancel = () => {
-    setOpenConfirm(false);
-    setSelectedFile(null);
-    setAction(null);
-    fileInputRef.current.value = '';
   };
 
   const triggerFileInput = (type) => {
@@ -103,13 +115,61 @@ const BulkAppointmentUpload = () => {
     fileInputRef.current.click();
   };
 
+  const cancelFileSelection = () => {
+    setSelectedFile(null);
+    setParsedData([]);
+    setPreviewData([]);
+    setOpenDialog(false);
+  };
+
+  const handleUploadOrUpdate = async () => {
+    if (!parsedData.length || !action) return;
+    setLoading(true);
+    try {
+      const url =
+        action === 'upload'
+          ? 'http://localhost:5000/api/appointments/bulk-json'
+          : 'http://localhost:5000/api/appointments/bulk-update';
+
+      const res = await axios.post(url, parsedData, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      alert(res.data.message || `${action} successful!`);
+    } catch (err) {
+      console.error(`${action} failed:`, err);
+
+      if (err.response?.status === 400) {
+        alert('Bad request: Check your file formatting.');
+      } else if (err.response?.status === 500) {
+        alert('Internal server error: Please contact support.');
+      } else {
+        alert(`${action} failed: Unknown error.`);
+      }
+    } finally {
+      setLoading(false);
+      setOpenDialog(false);
+      setSelectedFile(null);
+      setParsedData([]);
+      setAction(null);
+    }
+  };
+
   return (
     <Box>
       <Stack direction="row" spacing={2} mt={2}>
-        <Button variant="contained" color="primary" onClick={() => triggerFileInput('upload')}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => triggerFileInput('upload')}
+        >
           Upload
         </Button>
-        <Button variant="contained" color="secondary" onClick={() => triggerFileInput('update')}>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={() => triggerFileInput('update')}
+        >
           Update
         </Button>
       </Stack>
@@ -122,19 +182,78 @@ const BulkAppointmentUpload = () => {
         onChange={handleFileChange}
       />
 
-      {/* Confirmation Dialog */}
-      <Dialog open={openConfirm} onClose={handleCancel}>
-        <DialogTitle>Confirm {action === 'upload' ? 'Upload' : 'Update'}</DialogTitle>
+      {/* Review Dialog */}
+      <Dialog
+        open={openDialog}
+        onClose={() => !loading && setOpenDialog(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          Review {action === 'upload' ? 'Upload' : 'Update'} Data
+        </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to {action} the selected Excel file?
-            This action will {action === 'upload' ? 'add new records' : 'update existing records'}.
+            {parsedData.length} records found. Here's a preview of the first{' '}
+            {previewData.length}:
           </DialogContentText>
+          <Box mt={2} maxHeight="300px" overflow="auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-100">
+                <tr>
+                  {[
+                    'Name',
+                    'PositionTitle',
+                    'SchoolOffice',
+                    'District',
+                    'StatusOfAppointment',
+                    'NatureAppointment',
+                    'ItemNo',
+                    'DateSigned',
+                    'remarks'
+                  ].map((head) => (
+                    <th
+                      key={head}
+                      className="px-4 py-2 text-left text-xs font-bold text-gray-600"
+                    >
+                      {head}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {previewData.map((row, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="px-4 py-2 text-sm">{row.Name}</td>
+                    <td className="px-4 py-2 text-sm">{row.PositionTitle}</td>
+                    <td className="px-4 py-2 text-sm">{row.SchoolOffice}</td>
+                    <td className="px-4 py-2 text-sm">{row.District}</td>
+                    <td className="px-4 py-2 text-sm">
+                      {row.StatusOfAppointment}
+                    </td>
+                    <td className="px-4 py-2 text-sm">
+                      {row.NatureAppointment}
+                    </td>
+                    <td className="px-4 py-2 text-sm">{row.ItemNo}</td>
+                    <td className="px-4 py-2 text-sm">{row.DateSigned}</td>
+                    <td className="px-4 py-2 text-sm">{row.remarks}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCancel}>Cancel</Button>
-          <Button onClick={handleConfirm} variant="contained" color={action === 'upload' ? 'primary' : 'secondary'}>
-            Confirm
+          <Button onClick={cancelFileSelection} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleUploadOrUpdate}
+            variant="contained"
+            color={action === 'upload' ? 'primary' : 'secondary'}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Confirm'}
           </Button>
         </DialogActions>
       </Dialog>

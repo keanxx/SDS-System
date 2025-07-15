@@ -26,7 +26,7 @@ const AppointmentStatistics = () => {
       {/* Content Section */}
       <div className="flex flex-col w-full  flex-grow p-3 ">
         {/* Overview Section */}
-        <div className="w-full items-center flex justify-center  ">
+        <div className="w-full items-center flex justify-start px-10  ">
           <OverviewAppointment />
           
         </div>

@@ -52,7 +52,7 @@ const Navigator = () => {
     // Display loading state or add loading indicators if needed
     
     // Make API call to fetch travel data
-    axios.get('http://192.168.83.141:3000/travels')
+    axios.get('http://localhost:5000/api/travels')
       .then((res) => {
         const travels = res.data;
         

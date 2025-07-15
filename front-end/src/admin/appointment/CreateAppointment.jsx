@@ -27,51 +27,55 @@ const CreateAppointment = () => {
     natureAppointment: '',
     itemNo: '',
     dateSigned: '',
+    remarks: '',
   });
 
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
+  const upperCaseValue = e.target.value.toUpperCase(); // Convert input to uppercase
+  setFormData((prev) => ({
+    ...prev,
+    [e.target.name]: upperCaseValue, // Update state with uppercase value
+  }));
+};
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  console.log('Form Data:', formData); // Log the form data
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        data.append(key, value);
-      });
-      if (pdfFile) {
-        data.append('pdf', pdfFile);
-      }
-
-      await axios.post('http://localhost:5000/api/appointment', data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      alert('Appointment submitted successfully!');
-      setFormData({
-        name: '',
-        positionTitle: '',
-        schoolOffice: '',
-        district: '',
-        statusOfAppointment: '',
-        natureAppointment: '',
-        itemNo: '',
-        dateSigned: '',
-      });
-      setPdfFile(null);
-    } catch (error) {
-      console.error('Error submitting data:', error);
-      alert('Failed to submit data.');
+  try {
+    const data = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      data.append(key, value);
+    });
+    if (pdfFile) {
+      data.append('pdf', pdfFile);
     }
-  };
+
+    const response = await axios.post('http://localhost:5000/api/appointment', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    alert('Appointment submitted successfully!');
+    setFormData({
+      name: '',
+      positionTitle: '',
+      schoolOffice: '',
+      district: '',
+      statusOfAppointment: '',
+      natureAppointment: '',
+      itemNo: '',
+      dateSigned: '',
+      remarks: '',
+    });
+    setPdfFile(null);
+  } catch (error) {
+    console.error('Error submitting data:', error); // Log the error
+    alert('Failed to submit data.');
+  }
+};
 
   return (
     <Box>
@@ -190,6 +194,16 @@ const CreateAppointment = () => {
               <TextField
                 sx={{ minWidth: 250 }}
                 fullWidth
+                label="Remarks"
+                name="remarks"
+                value={formData.remarks}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                sx={{ minWidth: 250 }}
+                fullWidth
                 label="Date Signed"
                 name="dateSigned"
                 type="date"
@@ -198,6 +212,7 @@ const CreateAppointment = () => {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
+            
 
             {/* PDF Upload */}
             <Grid item xs={12}>

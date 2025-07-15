@@ -50,7 +50,7 @@ const OverviewAppointment = () => {
       <Typography variant="h5" mb={3}>Overview</Typography>
       <Grid container spacing={3}>
         <OverviewCard title="Total Appointments" value={totalAppointments} color="#1976d2" />
-        <OverviewCard title="Appointed This Month" value={appointmentsThisMonth} color="#0288d1" />
+      
         
       </Grid>
     </Box>

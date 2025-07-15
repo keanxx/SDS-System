@@ -8,31 +8,38 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete'; // Import Delete Icon
 import dayjs from 'dayjs';
 import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import axios from 'axios'; // Import Axios for API calls
-import { filterStateInitializer } from '@mui/x-data-grid/internals';
+import axios from 'axios';
 
 const TravelInput = () => {
   const [travelers, setTravelers] = useState([
-    { uid:'',name: '', position: '', station: '', initial: '' },
+    { uid: '', name: '', position: '', station: '', initial: '' },
   ]);
   const [inclusiveDate, setInclusiveDate] = useState(null);
   const [exclusiveDate, setExclusiveDate] = useState(null);
   const [area, setArea] = useState('');
-  const [employees, setEmployees] = useState([]); // State for employees
-  const [autocompleteValue, setAutocompleteValue] = useState(null); // State to control Autocomplete value
+  const [employees, setEmployees] = useState([]);
+  const [autocompleteValue, setAutocompleteValue] = useState(null);
+  const [file, setFile] = useState(null);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false); // State for success modal
 
-  // Fetch employees data from API
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await axios.get('http://192.168.83.141:3000/api/employees');
-        setEmployees(response.data); // Update employees state with API data
+        const response = await axios.get('http://localhost:5000/api/employees');
+        setEmployees(response.data);
       } catch (error) {
         console.error('Error fetching employees:', error);
       }
@@ -41,105 +48,83 @@ const TravelInput = () => {
     fetchEmployees();
   }, []);
 
- const handleSubmit = async () => {
-  // Validate required fields
-  if (!inclusiveDate || !exclusiveDate) {
-    alert('Please select both Inclusive Date and Exclusive Date.');
-    return;
-  }
+  const handleSubmit = async () => {
+    try {
+      for (const traveler of travelers) {
+        const travelDetails = {
+          employee_ID: traveler.uid,
+          PositionDesignation: traveler.position,
+          Station: traveler.station,
+          Purpose: document.getElementById('purpose').value.trim(),
+          Host: document.getElementById('host').value.trim(),
+          DatesFrom: dayjs(inclusiveDate).format('YYYY-MM-DD'),
+          DatesTo: dayjs(exclusiveDate).format('YYYY-MM-DD'),
+          Destination: document.getElementById('destination').value.trim(),
+          Area: area,
+          sof: document.getElementById('sof').value.trim(),
+        };
 
-  if (!area) {
-    alert('Please select an Area.');
-    return;
-  }
+        const formData = new FormData();
+        Object.entries(travelDetails).forEach(([key, value]) => {
+          formData.append(key, value);
+        });
 
-  const purpose = document.getElementById('purpose').value.trim();
-  const host = document.getElementById('host').value.trim();
-  const destination = document.getElementById('destination').value.trim();
-  const sof = document.getElementById('sof').value.trim();
+        if (file) formData.append('attachment', file);
 
-  if (!purpose || !host || !destination || !sof) {
-    alert('Please fill out all required fields.');
-    return;
-  }
+        const response = await axios.post('http://localhost:5000/api/travels', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
 
-  for (const traveler of travelers) {
-    if (!traveler.name.trim() || !traveler.position.trim() || !traveler.station.trim()) {
-      alert('Please fill out all traveler details.');
-      return;
+        console.log('Server Response:', response.data);
+      }
+
+      // Show success modal
+      setSuccessDialogOpen(true);
+
+      // Reset state and clear form
+      setTravelers([{ name: '', position: '', station: '', initial: '' }]);
+      setInclusiveDate(null);
+      setExclusiveDate(null);
+      setArea('');
+      document.getElementById('purpose').value = '';
+      document.getElementById('host').value = '';
+      document.getElementById('destination').value = '';
+      document.getElementById('sof').value = '';
+      setFile(null);
+    } catch (err) {
+      console.error('Failed to submit travel details:', err);
+      alert(`Submission failed: ${err.response?.data?.message || err.message}`);
     }
-  }
-
-  if (dayjs(inclusiveDate).isAfter(dayjs(exclusiveDate))) {
-    alert('Inclusive Date cannot be after Exclusive Date.');
-    return;
-  }
-
-  const commonDetails = {
-    purpose,
-    host,
-    datesfrom: dayjs(inclusiveDate).format('YYYY-MM-DD'),
-    datesto: dayjs(exclusiveDate).format('YYYY-MM-DD'),
-    destination,
-    area,
-    sof,
   };
 
-  try {
-    // Iterate over all travelers and send their details
-    for (const traveler of travelers) {
-      const travelDetails = {
-        employeeID: parseInt(traveler.uid) || null,
-        positiondesignation: traveler.position,
-        station: traveler.station,
-        ...commonDetails, // Include common details for all travelers
-      };
-
-      await axios.post('http://192.168.83.141:3000/api/travels', travelDetails);
-    }
-
-    alert('Travel details submitted successfully!');
-    console.log('Submitted travelers:', travelers);
-
-    // Optional: reset form
-    setTravelers([{ name: '', position: '', station: '', initial: '' }]);
-    setInclusiveDate(null);
-    setExclusiveDate(null);
-    setArea('');
-    document.getElementById('purpose').value = '';
-    document.getElementById('host').value = '';
-    document.getElementById('destination').value = '';
-    document.getElementById('sof').value = '';
-  } catch (err) {
-    console.error('Failed to submit travel details:', err);
-    alert(`Submission failed: ${err.response?.data?.message || err.message}`);
-  }
-};
-
+  const handleRemoveTraveler = (index) => {
+    const newTravelers = [...travelers];
+    newTravelers.splice(index, 1); // Remove the traveler at the specified index
+    setTravelers(newTravelers);
+  };
 
   return (
-    <div className="bg-white/50 backdrop-blur-md border-green-500/30 border rounded-lg p-10 space-y-5 w-full max-w-[1100px]">
+    <div className="bg-white/50 backdrop-blur-md border-gray-500/30 border rounded-lg p-10 space-y-5 w-full max-w-[1100px]">
       <h1 className="text-lg font-bold">Travel Authority Details</h1>
       <div className="flex flex-col space-y-5">
         {/* Autocomplete Component */}
         <Autocomplete
           disablePortal
           options={employees.length > 0 ? employees : []}
-          value={autocompleteValue} // Bind the value to the state
+          value={autocompleteValue}
           getOptionLabel={(option) => option.Initial || 'No Initial'}
           onChange={(e, selectedEmployee) => {
             if (selectedEmployee) {
               const newTravelers = [...travelers];
-              // Update the last traveler in the list with the selected employee's details
               newTravelers[newTravelers.length - 1] = {
-                uid: selectedEmployee.uid, // Include the uid here
+                uid: selectedEmployee.uid,
                 name: selectedEmployee.fullname,
                 position: selectedEmployee.positionTitle,
                 station: selectedEmployee.office,
                 initial: selectedEmployee.Initial,
               };
               setTravelers(newTravelers);
-              setAutocompleteValue(null); // Reset the Autocomplete value
+              setAutocompleteValue(null);
             }
           }}
           sx={{ width: 223 }}
@@ -150,7 +135,7 @@ const TravelInput = () => {
 
         {/* Traveler(s) Section */}
         {travelers.map((traveler, index) => (
-          <div key={index} className="flex space-x-5 justify-between">
+          <div key={index} className="flex space-x-5 items-center">
             <TextField
               fullWidth
               variant="outlined"
@@ -158,7 +143,7 @@ const TravelInput = () => {
               value={traveler.name}
               onChange={(e) => {
                 const newTravelers = [...travelers];
-                newTravelers[index].name = e.target.value;
+                newTravelers[index].name = e.target.value.toUpperCase();
                 setTravelers(newTravelers);
               }}
             />
@@ -169,7 +154,7 @@ const TravelInput = () => {
               value={traveler.position}
               onChange={(e) => {
                 const newTravelers = [...travelers];
-                newTravelers[index].position = e.target.value;
+                newTravelers[index].position = e.target.value.toUpperCase();
                 setTravelers(newTravelers);
               }}
             />
@@ -180,10 +165,16 @@ const TravelInput = () => {
               value={traveler.station}
               onChange={(e) => {
                 const newTravelers = [...travelers];
-                newTravelers[index].station = e.target.value;
+                newTravelers[index].station = e.target.value.toUpperCase();
                 setTravelers(newTravelers);
               }}
             />
+            <IconButton
+              color="error"
+              onClick={() => handleRemoveTraveler(index)}
+            >
+              <DeleteIcon />
+            </IconButton>
           </div>
         ))}
 
@@ -191,9 +182,8 @@ const TravelInput = () => {
         <Button
           variant="outlined"
           onClick={() => {
-            // Add a new empty traveler to the list
             setTravelers([...travelers, { name: '', position: '', station: '', initial: '' }]);
-            setAutocompleteValue(null); // Reset the Autocomplete value
+            setAutocompleteValue(null);
           }}
           sx={{ width: 'fit-content' }}
         >
@@ -208,6 +198,7 @@ const TravelInput = () => {
             variant="outlined"
             fullWidth
             multiline
+            sx={{ textTransform: 'uppercase' }}
           />
         </div>
 
@@ -290,6 +281,20 @@ const TravelInput = () => {
             </FormControl>
           </Box>
           <Button
+            variant="outlined"
+            component="label"
+            sx={{ width: 223 }}
+          >
+            Upload PDF
+            <input
+              type="file"
+              accept="application/pdf"
+              hidden
+              onChange={(e) => setFile(e.target.files[0])}
+            />
+          </Button>
+
+          <Button
             variant="contained"
             sx={{
               width: 223,
@@ -300,6 +305,21 @@ const TravelInput = () => {
           </Button>
         </div>
       </div>
+
+      {/* Success Modal */}
+      <Dialog open={successDialogOpen} onClose={() => setSuccessDialogOpen(false)}>
+        <DialogTitle>Success</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Travel details submitted successfully!
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSuccessDialogOpen(false)} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

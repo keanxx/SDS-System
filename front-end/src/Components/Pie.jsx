@@ -6,7 +6,7 @@ const Pie = () => {
   const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
-    axios.get('http://192.168.83.141:3000/travels')
+    axios.get('http://localhost:5000/api/travels') // Adjust the URL to your API endpoint
       .then((response) => {
         const travels = response.data;
 

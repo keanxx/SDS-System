@@ -16,7 +16,7 @@ const Overview = () => {
   const [ongoingTravels, setOngoingTravels] = useState(0);
 
   useEffect(() => {
-    axios.get('http://192.168.83.141:3000/travels')
+    axios.get('http://localhost:5000/api/travels') // Adjust the URL to your API endpoint
       .then((res) => {
         const travels = res.data;
         setTotalTravels(travels.length);

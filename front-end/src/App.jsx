@@ -13,6 +13,7 @@ import AppointmentStatistics from './Pages/appointment/AppointmentStatistics';
 import AppointmentDetails from './Pages/appointment/AppointmentDashboard';
 import CreateTravel from './admin/travel/CreateTravel';
 import MainDashboardAdmin from './admin/MainDashboardAdmin';
+import EditTravel from './admin/travel/EditTravel';
 
 const App = () => {
   return (
@@ -25,6 +26,7 @@ const App = () => {
 
         {/*admin travel */}
           <Route path="/createTravel" element={<CreateTravel/>} />
+          <Route path="/editTravel" element={<EditTravel/>} />
           <Route path="/" element={<MainDashboard/>} />
         
         {/*SDS appointment system*/}

@@ -1,194 +1,203 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableContainer,
+  Paper,
   Typography,
-  IconButton,
   Menu,
-  MenuItem
+  MenuItem,
+  IconButton,
+  Box,
+  Alert,
+  CircularProgress,
+  TablePagination,
 } from '@mui/material';
-import {
-  DataGrid,
-  GridToolbar
-} from '@mui/x-data-grid';
-import { styled } from '@mui/system';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import dayjs from 'dayjs';
 
-// Styled DataGrid with always visible column menu (⋮) and text wrapping
-const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
-  '& .MuiDataGrid-cell': {
-    whiteSpace: 'normal !important',
-    wordWrap: 'break-word',
-    lineHeight: '1.4',
-    paddingTop: '8px',
-    paddingBottom: '8px',
-    alignItems: 'start',
-  },
-  '& .MuiDataGrid-columnHeader:hover .MuiDataGrid-iconButtonContainer': {
-    visibility: 'visible',
-  },
-  '& .MuiDataGrid-iconButtonContainer': {
-    visibility: 'visible',
-    width: 'auto',
-  },
-}));
-
 const TravelDetails = ({ searchQuery }) => {
+  const [data, setData] = useState([]);
+  const [stations, setStations] = useState([]);
+  const [stationFilter, setStationFilter] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [sortDirection, setSortDirection] = useState(null);
-  const [panelContent, setPanelContent] = useState([]);
-  const [uniqueStations, setUniqueStations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleSortMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleSortMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleStationSelection = (station) => {
-    setSortDirection(station);
-    handleSortMenuClose();
-  };
-
-  const getSortedData = () => {
-    const data = [...panelContent];
-    if (!sortDirection) return data;
-
-    return data.filter((item) => item.Station === sortDirection);
-  };
-
-  const getFilteredData = () => {
-    const sortedData = getSortedData();
-
-    if (searchQuery) {
-      return sortedData.filter((item) =>
-        Object.values(item).some((value) =>
-          value?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
-    }
-
-    return sortedData;
-  };
+  // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://192.168.83.141:3000/travels');
-        const data = await response.json();
-        setPanelContent(data);
+        const [travelRes, employeeRes] = await Promise.all([
+          fetch('http://localhost:5000/api/travels'),
+          fetch('http://localhost:5000/api/employees'),
+        ]);
 
-        // Extract unique stations for dropdown
-        const stations = [...new Set(data.map((item) => item.Station))];
-        setUniqueStations(stations);
-      } catch (error) {
-        console.error('Failed to fetch travel data:', error);
+        const [travels, employees] = await Promise.all([
+          travelRes.json(),
+          employeeRes.json(),
+        ]);
+
+        const merged = travels.map((travel) => {
+          const match = employees.find(emp => emp.uid === travel.employee_ID);
+          return {
+            ...travel,
+            Fullname: match ? match.fullname : 'Unknown',
+          };
+        });
+
+        setData(merged);
+        setStations([...new Set(merged.map(t => t.Station).filter(Boolean))]);
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load data.');
+        setLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-  const columns = [
-    { field: 'fullname', headerName: 'Name', flex: 1, minWidth: 150 },
-    { field: 'PositionDesignation', headerName: 'Position/Designation', flex: 1, minWidth: 200 },
-    { field: 'Station', headerName: 'Station', flex: 1, minWidth: 150 },
-    {
-      field: 'Purpose',
-      headerName: 'Purpose of Travel',
-      flex: 2,
-      minWidth: 300,
-      renderCell: (params) => (
-        <a
-          href={`http://192.168.83.141:3000/pdfs/${params.row.Purpose}.pdf`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: '#007BFF', textDecoration: 'underline' }}
-        >
-          {params.value}
-        </a>
-      ),
-    },
-    { field: 'Host', headerName: 'Host of Activity', flex: 1, minWidth: 200 },
-    {
-      field: 'DatesFrom',
-      headerName: 'Start Date',
-      flex: 1,
-      minWidth: 150,
-      valueFormatter: (params) => dayjs(params.value).format('MMM DD, YYYY'),
-    },
-    {
-      field: 'DatesTo',
-      headerName: 'End Date',
-      flex: 1,
-      minWidth: 150,
-      valueFormatter: (params) => dayjs(params.value).format('MMM DD, YYYY'),
-    },
-    { field: 'Destination', headerName: 'Destination', flex: 1, minWidth: 200 },
-    { field: 'sof', headerName: 'Fund Source', flex: 1, minWidth: 200 },
-    { field: 'Area', headerName: 'Area', flex: 1, minWidth: 150 },
-  ];
+  const handleFilterOpen = (e) => setAnchorEl(e.currentTarget);
+  const handleFilterClose = () => setAnchorEl(null);
+  const applyStationFilter = (station) => {
+    setStationFilter(station);
+    handleFilterClose();
+  };
+
+  const filteredData = data.filter((item) => {
+    const matchesStation = stationFilter ? item.Station === stationFilter : true;
+    const matchesSearch = searchQuery
+      ? Object.values(item).some(val =>
+          String(val).toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : true;
+    return matchesStation && matchesSearch;
+  });
+
+  // Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box p={2}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   return (
-    <section className="py-5 px-5 border-2 border-gray-500/30 rounded shadow-lg min-w-xl w-full min-h-[550px] overflow-y-auto max-h-screen bg-white">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold mb-4">Travel Details</h1>
-        {/* Manual Sort dropdown */}
-        <Box display="flex" alignItems="center" 
-        sx={{
-    cursor: 'pointer',
-    border: '1px solid black',
-    borderRadius: '4px', 
-    padding: '4px 4px',
-    marginBottom: 1   
-  }} onClick={handleSortMenuOpen}>
-          <Typography variant="body1" sx={{ marginRight: 1 }}>
-            Filter by Station
-          </Typography>
+    <Paper sx={{ p: 2, mt: 2 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h6">Travel Details</Typography>
+        <Box display="flex" alignItems="center" onClick={handleFilterOpen} sx={{ cursor: 'pointer' }}>
+          <Typography>Filter by Station</Typography>
           <IconButton>
             <ArrowDropDownIcon />
           </IconButton>
         </Box>
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleSortMenuClose}
-          sx={{
-            border: '1px solid #ccc', // Adds a border to the dropdown
-            borderRadius: '8px', // Optional: Adds rounded corners
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', // Optional: Adds a subtle shadow
-          }}
-        >
-          {uniqueStations.map((station) => (
-            <MenuItem key={station} onClick={() => handleStationSelection(station)}>
+        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleFilterClose}>
+          {stations.map((station) => (
+            <MenuItem key={station} onClick={() => applyStationFilter(station)}>
               {station}
             </MenuItem>
           ))}
-          <MenuItem onClick={() => handleStationSelection(null)}>Reset Filter</MenuItem>
+          <MenuItem onClick={() => applyStationFilter(null)}>Reset Filter</MenuItem>
         </Menu>
-      </header>
-
-      <Box sx={{ height: 500, width: '100%' }}>
-        <StyledDataGrid
-          rows={getFilteredData()}
-          columns={columns}
-          pageSize={10}
-          rowsPerPageOptions={[10, 20, 50]}
-          getRowId={(row) => row.id || row.fullname}
-          disableSelectionOnClick
-          slots={{
-            toolbar: GridToolbar,
-          }}
-          slotProps={{
-            toolbar: {
-              showQuickFilter: true,
-            },
-          }}
-        />
       </Box>
-    </section>
+
+      <TableContainer component={Paper} sx={{ maxHeight: 500, overflowY: 'auto' }}>
+        <Table stickyHeader>
+          <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Position</TableCell>
+              <TableCell>Station</TableCell>
+              <TableCell>Purpose / Attachment</TableCell>
+              <TableCell>Host</TableCell>
+              <TableCell>Travel Period</TableCell>
+              <TableCell>Destination</TableCell>
+              <TableCell>Source of Fund</TableCell>
+              <TableCell>Area</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredData
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((row, index) => (
+                <TableRow key={index}>
+                  <TableCell>{row.Fullname}</TableCell>
+                  <TableCell>{row.PositionDesignation}</TableCell>
+                  <TableCell>{row.Station}</TableCell>
+                  <TableCell>
+                    <div>{row.Purpose || 'N/A'}</div>
+                    {row.Attachment ? (
+                      <a
+                        href={`http://localhost:5000${row.Attachment}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#007BFF', textDecoration: 'underline', display: 'inline-block', marginTop: '4px' }}
+                      >
+                        View PDF
+                      </a>
+                    ) : (
+                      <div style={{ fontStyle: 'italic', color: '#888' }}>None</div>
+                    )}
+                  </TableCell>
+                  <TableCell>{row.Host}</TableCell>
+                  <TableCell>
+                    {row.DatesFrom && row.DatesTo
+                      ? `${dayjs(row.DatesFrom).format('MMM DD')} - ${dayjs(row.DatesTo).format('MMM DD, YYYY')}`
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell>{row.Destination}</TableCell>
+                  <TableCell>{row.sof}</TableCell>
+                  <TableCell>{row.Area}</TableCell>
+                </TableRow>
+              ))}
+            {filteredData.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                  No records found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Pagination Controls */}
+      <TablePagination
+        component="div"
+        count={filteredData.length}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
+    </Paper>
   );
 };
 

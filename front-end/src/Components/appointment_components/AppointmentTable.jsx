@@ -11,19 +11,21 @@ import {
   TableRow,
   Paper,
   CircularProgress,
-  TablePagination,
   FormControl,
   Select,
   MenuItem,
   InputLabel,
   TextField,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from '@mui/material';
 
 const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(7);
 
   const [natureOptions, setNatureOptions] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
@@ -31,10 +33,17 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
   const [selectedNature, setSelectedNature] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedReleaseStatus, setSelectedReleaseStatus] = useState(''); // Dropdown filter for release status
+
+  const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [releaseInfo, setReleaseInfo] = useState(null);
 
   useEffect(() => {
     axios.get('http://localhost:5000/api/appointments')
       .then((res) => {
+        console.log('Debugging appointments:', res.data); // Debugging
         setAppointments(res.data);
         setLoading(false);
 
@@ -51,6 +60,72 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
       });
   }, []);
 
+  const handleRelease = (appointment) => {
+    setSelectedAppointment(appointment);
+    setReleaseDialogOpen(true);
+  };
+
+  const confirmRelease = () => {
+    axios.post(`http://localhost:5000/api/appointment/${selectedAppointment.id}/release`)
+      .then(() => {
+        const releaseTime = new Date().toLocaleString('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+
+        // Update the appointment locally
+        setAppointments((prev) =>
+          prev.map((app) =>
+            app.id === selectedAppointment.id ? { ...app, releasedAt: releaseTime } : app
+          )
+        );
+
+        setReleaseDialogOpen(false);
+        setSelectedAppointment(null);
+      })
+      .catch((err) => {
+        console.error('Error releasing appointment:', err);
+        alert('Failed to release the appointment. Please try again.');
+      });
+  };
+
+  const handleViewReleaseInfo = (appointment) => {
+    setSelectedAppointment(appointment);
+    axios.get(`http://localhost:5000/api/appointment/${appointment.id}/release-info`)
+      .then((res) => {
+        const releaseDate = new Date(res.data.releasedAt);
+
+        // Format the date and time
+        const formattedDate = releaseDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        });
+        const formattedTime = releaseDate.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        });
+
+        // Include remarks in the dialog
+        setReleaseInfo({
+          date: formattedDate,
+          time: formattedTime,
+          remarks: appointment.remarks || 'No remarks available', // Added remarks field
+        });
+
+        setViewDialogOpen(true);
+      })
+      .catch((err) => {
+        console.error('Error fetching release info:', err);
+        alert('Failed to fetch release information.');
+      });
+  };
+
   const filteredAppointments = appointments
     .filter((row) => {
       const matchesSearch = Object.values(row).some((value) =>
@@ -59,7 +134,13 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
       const matchesNature = selectedNature ? row.NatureAppointment === selectedNature : true;
       const matchesStatus = selectedStatus ? row.StatusOfAppointment === selectedStatus : true;
       const matchesDistrict = selectedDistrict ? row.District === selectedDistrict : true;
-      return matchesSearch && matchesNature && matchesStatus && matchesDistrict;
+      const matchesReleaseStatus =
+        selectedReleaseStatus === 'Released'
+          ? row.releasedAt
+          : selectedReleaseStatus === 'Not Released'
+          ? !row.releasedAt
+          : true; // Matches based on release status dropdown
+      return matchesSearch && matchesNature && matchesStatus && matchesDistrict && matchesReleaseStatus;
     })
     .sort((a, b) => {
       const surnameA = a.Name.split(' ').slice(-1)[0].toLowerCase(); // Extract surname
@@ -79,8 +160,18 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
           size="small"
         />
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-
-          {/* District Dropdown */}
+          <FormControl sx={{ minWidth: 200 }} size="small">
+            <InputLabel>Release Status</InputLabel>
+            <Select
+              value={selectedReleaseStatus}
+              onChange={(e) => setSelectedReleaseStatus(e.target.value)}
+              label="Release Status"
+            >
+              <MenuItem value=""><em>All</em></MenuItem>
+              <MenuItem value="Released">Released</MenuItem>
+              <MenuItem value="Not Released">Not Released</MenuItem>
+            </Select>
+          </FormControl>
           <FormControl sx={{ minWidth: 200 }} size="small">
             <InputLabel>District</InputLabel>
             <Select
@@ -107,7 +198,6 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               ))}
             </Select>
           </FormControl>
-
           <FormControl sx={{ minWidth: 200 }} size="small">
             <InputLabel>Status of Appointment</InputLabel>
             <Select
@@ -121,8 +211,6 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               ))}
             </Select>
           </FormControl>
-
-          
         </Box>
       </Box>
 
@@ -132,12 +220,24 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
           <CircularProgress />
         </Box>
       ) : (
-        <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
-          <TableContainer component={Paper} elevation={2}>
-            <Table>
+        <Box sx={{ width: '100%', maxWidth: '100%' }}>
+          <TableContainer component={Paper} elevation={2} sx={{ maxHeight: 500, overflow: 'auto' }}>
+            <Table stickyHeader>
               <TableHead>
                 <TableRow sx={{ backgroundColor: '#f0f0f0' }}>
-                  <TableCell sx={{ whiteSpace: 'nowrap', width: 180, textAlign: 'center' }}><strong>Name</strong></TableCell>
+                  <TableCell
+                    sx={{
+                      whiteSpace: 'nowrap',
+                      width: 180,
+                      textAlign: 'center',
+                      position: 'sticky',
+                      left: 0,
+                      backgroundColor: '#f0f0f0',
+                      zIndex: 1,
+                    }}
+                  >
+                    <strong>Name</strong>
+                  </TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap', width: 150, textAlign: 'center' }}><strong>Position Title</strong></TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap', width: 160, textAlign: 'center' }}><strong>School/Office</strong></TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap', width: 160, textAlign: 'center' }}><strong>District</strong></TableCell>
@@ -145,74 +245,138 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
                   <TableCell sx={{ whiteSpace: 'nowrap', width: 160, textAlign: 'center' }}><strong>Nature of Appointment</strong></TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap', width: 130, textAlign: 'center' }}><strong>Item No.</strong></TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap', width: 130, textAlign: 'center' }}><strong>Date Signed</strong></TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 130, textAlign: 'center' }}><strong>Released</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredAppointments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={9} align="center">
                       <Typography variant="body2" sx={{ py: 2 }}>
                         No appointments found.
                       </Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredAppointments
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((row, index) => (
-                      <TableRow
-                        key={row.id}
+                  filteredAppointments.map((row, index) => (
+                    <TableRow
+                      key={row.id} // Ensure `row.id` is unique
+                      sx={{
+                        backgroundColor: index % 2 === 0 ? '#fafafa' : '#fff',
+                        '&:hover': { backgroundColor: '#f5f5f5' },
+                      }}
+                    >
+                      <TableCell
                         sx={{
+                          whiteSpace: 'nowrap',
+                          position: 'sticky',
+                          left: 0,
                           backgroundColor: index % 2 === 0 ? '#fafafa' : '#fff',
-                          '&:hover': { backgroundColor: '#f5f5f5' },
+                          zIndex: 1,
                         }}
                       >
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                          {row.pdfPath ? (
-                            <a
-                              href={`http://localhost:5000/${row.pdfPath}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 500 }}
-                            >
-                              {row.Name}
-                            </a>
-                          ) : row.Name}
-                        </TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.PositionTitle}</TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.SchoolOffice}</TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{row.District}</TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{row.StatusOfAppointment}</TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{row.NatureAppointment}</TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-                          {row.ItemNo?.replace(' ', '\n')}
-                        </TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                          {row.DateSigned && !isNaN(new Date(row.DateSigned))
-                            ? new Date(row.DateSigned).toLocaleDateString('en-CA')
-                            : ''}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                        {row.pdfPath ? (
+                          <a
+                            href={`http://localhost:5000/${row.pdfPath}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 500 }}
+                          >
+                            {row.Name}
+                          </a>
+                        ) : row.Name}
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.PositionTitle}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.SchoolOffice}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{row.District}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{row.StatusOfAppointment}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{row.NatureAppointment}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+                        {row.ItemNo?.replace(' ', '\n')}
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {row.DateSigned && !isNaN(new Date(row.DateSigned))
+                          ? new Date(row.DateSigned).toLocaleDateString('en-CA')
+                          : ''}
+                      </TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+                        {row.releasedAt ? (
+                          <Button
+                            variant="contained"
+                            color="secondary"
+                            size="small"
+                            onClick={() => handleViewReleaseInfo(row)}
+                          >
+                            View
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={() => handleRelease(row)}
+                          >
+                            Release
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
           </TableContainer>
-
-          <TablePagination
-            rowsPerPageOptions={[7, 12, 24]}
-            component="div"
-            count={filteredAppointments.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={(event, newPage) => setPage(newPage)}
-            onRowsPerPageChange={(event) => {
-              setRowsPerPage(parseInt(event.target.value, 10));
-              setPage(0);
-            }}
-          />
+          {/* Total Data Count */}
+          <Box sx={{ mt: 2, textAlign: 'end' }}>
+            <Typography variant="body1" sx={{fontWeight: 'bold'}}>
+              Total Entries: {filteredAppointments.length}
+            </Typography>
+          </Box>
         </Box>
       )}
+
+      {/* Release Confirmation Modal */}
+      <Dialog
+        open={releaseDialogOpen}
+        onClose={() => setReleaseDialogOpen(false)}
+      >
+        <DialogTitle>Confirm Release</DialogTitle>
+        <DialogContent>
+          Are you sure you want to release this appointment?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReleaseDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmRelease} color="primary">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* View Release Info Modal */}
+      <Dialog
+        open={viewDialogOpen}
+        onClose={() => setViewDialogOpen(false)}
+      >
+        <DialogTitle>Release Information</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" component="div">
+            {releaseInfo ? (
+              <>
+                <div>Date: {releaseInfo.date}</div>
+                <div>Time: {releaseInfo.time}</div>
+                <div>Remarks: {releaseInfo.remarks}</div>
+              </>
+            ) : (
+              'No release information available.'
+            )}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewDialogOpen(false)} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

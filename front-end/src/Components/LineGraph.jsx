@@ -63,41 +63,42 @@ const LineGraph = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchGraphData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+ const fetchGraphData = useCallback(async () => {
+  setLoading(true);
+  setError(null);
 
-    try {
-      const typeMap = { Weekly: 'week', Monthly: 'month', Yearly: 'year' };
-      let url = `http://192.168.83.141:3000/travels/graph?type=${typeMap[timeRange]}`;
+  try {
+    const typeMap = { Weekly: 'week', Monthly: 'month', Yearly: 'year' };
+    let url = `http://localhost:5000/api/travels/graph?type=${typeMap[timeRange]}`;
 
-      if (selectedYear !== 'All') {
-        url += `&year=${selectedYear}`;
-      }
-
-      if (timeRange === 'Weekly' && selectedYear !== 'All') {
-        url += `&month=${selectedMonth + 1}`;
-      }
-
-      if (selectedPosition !== 'All') {
-        url += `&position=${selectedPosition}`;
-      }
-
-      if (selectedStation !== 'All') {
-        url += `&station=${selectedStation}`;
-      }
-
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`API error (${response.status}): ${await response.text()}`);
-      const data = await response.json();
-      setGraphData(data);
-    } catch (err) {
-      console.error('Fetch error:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (selectedYear !== 'All') {
+      url += `&year=${selectedYear}`;
     }
-  }, [timeRange, selectedYear, selectedMonth, selectedPosition, selectedStation]);
+
+    if (timeRange === 'Weekly' && selectedYear !== 'All') {
+      url += `&month=${selectedMonth + 1}`;
+    }
+
+    if (selectedPosition !== 'All') {
+      url += `&position=${selectedPosition}`;
+    }
+
+    if (selectedStation !== 'All') {
+      url += `&station=${selectedStation}`;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`API error (${response.status}): ${await response.text()}`);
+    const data = await response.json();
+    setGraphData(data);
+  } catch (err) {
+    console.error('Fetch error:', err);
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+}, [timeRange, selectedYear, selectedMonth, selectedPosition, selectedStation]);
+
 
   useEffect(() => {
     fetchGraphData();
