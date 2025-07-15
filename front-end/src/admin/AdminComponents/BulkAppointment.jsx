@@ -21,6 +21,7 @@ const BulkAppointmentUpload = () => {
   const [previewData, setPreviewData] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(false);
+  const baseURL = import.meta.env.VITE_API_URL ;
 
   const formatDate = (value) => {
     if (!value) return null;
@@ -128,8 +129,8 @@ const BulkAppointmentUpload = () => {
     try {
       const url =
         action === 'upload'
-          ? 'http://localhost:5000/api/appointments/bulk-json'
-          : 'http://localhost:5000/api/appointments/bulk-update';
+          ? `${baseURL}/api/appointments/bulk-json`
+          : `${baseURL}/api/appointments/bulk-update`;
 
       const res = await axios.post(url, parsedData, {
         headers: { 'Content-Type': 'application/json' }

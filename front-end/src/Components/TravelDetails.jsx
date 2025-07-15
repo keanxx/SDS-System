@@ -26,7 +26,7 @@ const TravelDetails = ({ searchQuery }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const baseURL = import.meta.env.VITE_API_URL ;
   // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -35,8 +35,8 @@ const TravelDetails = ({ searchQuery }) => {
     const fetchData = async () => {
       try {
         const [travelRes, employeeRes] = await Promise.all([
-          fetch('http://localhost:5000/api/travels'),
-          fetch('http://localhost:5000/api/employees'),
+          fetch(`${baseURL}/api/travels`),
+          fetch(`${baseURL}/api/employees`),
         ]);
 
         const [travels, employees] = await Promise.all([

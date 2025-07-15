@@ -10,7 +10,7 @@ import {
 import { Edit, Delete } from '@mui/icons-material';
 import axios from 'axios';
 
-const API = 'http://localhost:5000/api';
+
 
 const EditAppointment = () => {
   const [appointments, setAppointments] = useState([]);
@@ -19,7 +19,9 @@ const EditAppointment = () => {
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const baseURL = import.meta.env.VITE_API_URL ;
 
+  const API = `${baseURL}/api`;
   const fetchAppointments = async () => {
     const res = await axios.get(`${API}/appointments`);
     setAppointments(res.data);

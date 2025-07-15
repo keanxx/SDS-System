@@ -14,9 +14,10 @@ const Overview = () => {
   const [upcomingTravels, setUpcomingTravels] = useState(0);
   const [finishedTravels, setFinishedTravels] = useState(0);
   const [ongoingTravels, setOngoingTravels] = useState(0);
+  const baseURL = import.meta.env.VITE_API_URL ;
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/travels') // Adjust the URL to your API endpoint
+    axios.get(`${baseURL}/api/travels`) // Adjust the URL to your API endpoint
       .then((res) => {
         const travels = res.data;
         setTotalTravels(travels.length);

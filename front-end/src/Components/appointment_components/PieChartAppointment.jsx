@@ -5,11 +5,12 @@ import { PieChart } from '@mui/x-charts/PieChart';
 
 const PieChartAppointment = () => {
   const [chartData, setChartData] = useState([]);
+  const baseURL = import.meta.env.VITE_API_URL ;
 
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/appointments');
+        const res = await axios.get(`${baseURL}/api/appointments`);
         if (Array.isArray(res.data)) {
           const districtCounts = {};
 

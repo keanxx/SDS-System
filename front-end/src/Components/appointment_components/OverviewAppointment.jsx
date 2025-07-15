@@ -5,9 +5,10 @@ import axios from 'axios';
 const OverviewAppointment = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const baseURL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/appointments')
+    axios.get(`${baseURL}/api/appointments`)
       .then(res => {
         setAppointments(res.data);
         setLoading(false);

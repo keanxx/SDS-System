@@ -23,11 +23,12 @@ const CustomTable = ({ searchQuery }) => {
   const [travels, setTravels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const baseURL = import.meta.env.VITE_API_URL ;
   
   // Fetch travel data from API
   useEffect(() => {
     setLoading(true);
-    axios.get('http://localhost:5000/api/travels')
+    axios.get(`${baseURL}/api/travels`)
       .then(response => {
         setTravels(response.data);
         setLoading(false);
@@ -129,7 +130,7 @@ const CustomTable = ({ searchQuery }) => {
                     <TableCell>
   {travel.attachment ? (
     <a 
-      href={`http://localhost:5000${travel.attachment}`} 
+      href={`${baseURL}${travel.attachment}`} 
       target="_blank" 
       rel="noopener noreferrer"
       style={{ color: 'blue', textDecoration: 'underline' }}

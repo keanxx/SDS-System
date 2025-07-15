@@ -45,9 +45,10 @@ const LineGraphAppointment = () => {
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState('2025'); // Default to 2025
   const [yearOptions, setYearOptions] = useState([]);
+  const baseURL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/appointments')
+    axios.get(`${baseURL}/api/appointments`)
       .then((res) => {
         setAppointments(res.data);
         setLoading(false);

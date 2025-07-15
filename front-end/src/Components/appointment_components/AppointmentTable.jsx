@@ -39,9 +39,10 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [releaseInfo, setReleaseInfo] = useState(null);
+  const baseURL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/appointments')
+    axios.get(`${baseURL}/api/appointments`)
       .then((res) => {
         console.log('Debugging appointments:', res.data); // Debugging
         setAppointments(res.data);
@@ -66,7 +67,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
   };
 
   const confirmRelease = () => {
-    axios.post(`http://localhost:5000/api/appointment/${selectedAppointment.id}/release`)
+    axios.post(`${baseURL}/api/appointment/${selectedAppointment.id}/release`)
       .then(() => {
         const releaseTime = new Date().toLocaleString('en-CA', {
           year: 'numeric',
@@ -95,7 +96,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
 
   const handleViewReleaseInfo = (appointment) => {
     setSelectedAppointment(appointment);
-    axios.get(`http://localhost:5000/api/appointment/${appointment.id}/release-info`)
+    axios.get(`${baseURL}/api/appointment/${appointment.id}/release-info`)
       .then((res) => {
         const releaseDate = new Date(res.data.releasedAt);
 

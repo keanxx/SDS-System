@@ -34,11 +34,12 @@ const TravelInput = () => {
   const [autocompleteValue, setAutocompleteValue] = useState(null);
   const [file, setFile] = useState(null);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false); // State for success modal
+  const baseURL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/employees');
+        const response = await axios.get(`${baseURL}/api/employees`);
         setEmployees(response.data);
       } catch (error) {
         console.error('Error fetching employees:', error);
@@ -71,7 +72,7 @@ const TravelInput = () => {
 
         if (file) formData.append('attachment', file);
 
-        const response = await axios.post('http://localhost:5000/api/travels', formData, {
+        const response = await axios.post(`${baseURL}/api/travels`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
 

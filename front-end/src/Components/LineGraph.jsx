@@ -62,6 +62,7 @@ const LineGraph = () => {
   const [graphData, setGraphData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const baseURL = import.meta.env.VITE_API_URL ;
 
  const fetchGraphData = useCallback(async () => {
   setLoading(true);
@@ -69,7 +70,7 @@ const LineGraph = () => {
 
   try {
     const typeMap = { Weekly: 'week', Monthly: 'month', Yearly: 'year' };
-    let url = `http://localhost:5000/api/travels/graph?type=${typeMap[timeRange]}`;
+    let url = `${baseURL}/api/travels/graph?type=${typeMap[timeRange]}`;
 
     if (selectedYear !== 'All') {
       url += `&year=${selectedYear}`;

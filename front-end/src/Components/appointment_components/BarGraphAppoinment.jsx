@@ -33,9 +33,10 @@ const BarGraphAppointment = () => {
   const [loading, setLoading] = useState(true);
   const [natureOptions, setNatureOptions] = useState([]);
   const [districtOptions, setDistrictOptions] = useState([]);
+  const baseURL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/appointments')
+    axios.get(`${baseURL}/api/appointments`)
       .then(res => {
         setAppointments(res.data);
         setLoading(false);

@@ -38,7 +38,7 @@ const Navigator = () => {
   const ongoingRef = useRef(null);
   const upcomingRef = useRef(null);
   const finishedRef = useRef(null);
-  
+  const baseURL = import.meta.env.VITE_API_URL ;
   // Map of refs - connects travel type names to their DOM references
   const buttonRefs = {
     'Total Travels': totalRef,
@@ -52,7 +52,7 @@ const Navigator = () => {
     // Display loading state or add loading indicators if needed
     
     // Make API call to fetch travel data
-    axios.get('http://localhost:5000/api/travels')
+    axios.get(`${baseURL}/api/travels`)
       .then((res) => {
         const travels = res.data;
         

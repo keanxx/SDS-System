@@ -4,9 +4,9 @@ import axios from 'axios';
 
 const Pie = () => {
   const [chartData, setChartData] = useState([]);
-
+  const baseURL = import.meta.env.VITE_API_URL;
   useEffect(() => {
-    axios.get('http://localhost:5000/api/travels') // Adjust the URL to your API endpoint
+    axios.get(`${baseURL}/api/travels`) // Adjust the URL to your API endpoint
       .then((response) => {
         const travels = response.data;
 
