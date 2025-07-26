@@ -26,12 +26,32 @@ const upload = multer({ storage });
 router.get('/appointments', (req, res) => {
   const sql = `
     SELECT 
-      ad.*, 
-      ar.releasedAt 
-    FROM \`appointment-details\` ad
-    LEFT JOIN \`appointment-releases\` ar 
+      ad.id, 
+      ad.Name, 
+      ad.PositionTitle, 
+      ad.SchoolOffice, 
+      ad.District, 
+      ad.StatusOfAppointment, 
+      ad.NatureAppointment, 
+      ad.ItemNo, 
+      ad.DateSigned, 
+      ad.pdfPath, 
+      ad.remarks, 
+      MAX(ar.releasedAt) AS releasedAt
+    FROM \`appointment_details\` ad
+    LEFT JOIN \`appointment_releases\` ar 
     ON ad.id = ar.appointmentId
-    GROUP BY ad.id; -- Ensure uniqueness
+    GROUP BY ad.id, 
+             ad.Name, 
+             ad.PositionTitle, 
+             ad.SchoolOffice, 
+             ad.District, 
+             ad.StatusOfAppointment, 
+             ad.NatureAppointment, 
+             ad.ItemNo, 
+             ad.DateSigned, 
+             ad.pdfPath, 
+             ad.remarks;
   `;
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json({ error: 'Database error.' });
@@ -44,7 +64,7 @@ router.put('/appointment/:id/remarks', (req, res) => {
   const { remarks } = req.body;
   const id = req.params.id;
 
-  const sql = 'UPDATE `appointment-details` SET remarks = ? WHERE id = ?';
+  const sql = 'UPDATE `appointment_details` SET remarks = ? WHERE id = ?';
   db.query(sql, [remarks, id], (err, result) => {
     if (err) return res.status(500).json({ error: 'Failed to update remarks.' });
     res.status(200).json({ message: 'Remarks updated successfully!' });
@@ -55,13 +75,13 @@ router.put('/appointment/:id/remarks', (req, res) => {
 router.post('/appointment/:id/release', (req, res) => {
   const id = req.params.id;
 
-  const sqlCheck = 'SELECT id FROM `appointment-details` WHERE id = ?';
+  const sqlCheck = 'SELECT id FROM `appointment_details` WHERE id = ?';
   db.query(sqlCheck, [id], (err, results) => {
     if (err) return res.status(500).json({ error: 'Database error during check.' });
     if (results.length === 0) return res.status(404).json({ error: 'Appointment not found.' });
 
     const sqlInsert = `
-      INSERT INTO \`appointment-releases\` (appointmentId, releasedAt)
+      INSERT INTO \`appointment_releases\` (appointmentId, releasedAt)
       VALUES (?, NOW())
     `;
 
@@ -78,7 +98,7 @@ router.get('/appointment/:id/release-info', (req, res) => {
 
   const sql = `
     SELECT releasedAt
-    FROM \`appointment-releases\`
+    FROM \`appointment_releases\`
     WHERE appointmentId = ?
   `;
 
@@ -110,7 +130,7 @@ router.post('/appointment', upload.single('pdf'), (req, res) => {
   const pdfPath = req.file ? `uploads/${req.file.filename}` : null;
 
   const sql = `
-    INSERT INTO \`appointment-details\` 
+    INSERT INTO \`appointment_details\` 
     (Name, PositionTitle, SchoolOffice, District, StatusOfAppointment, NatureAppointment, ItemNo, DateSigned, pdfPath, remarks)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
@@ -127,67 +147,103 @@ router.post('/appointment', upload.single('pdf'), (req, res) => {
     }
   );
 });
+
+// Update appointment (with optional PDF replacement)
 // Update appointment (with optional PDF replacement)
 router.put('/appointment/:id', upload.single('pdf'), (req, res) => {
   const id = req.params.id;
+
+  // Extract fields from request body
   const {
     name,
     positionTitle,
     schoolOffice,
+    district, // Added missing field mapping
     statusOfAppointment,
     natureAppointment,
     itemNo,
-    dateSigned
+    dateSigned, // This requires formatting
+    remarks
   } = req.body;
 
+  // Format dateSigned to MySQL-compatible format (YYYY-MM-DD HH:MM:SS)
+  const formattedDateSigned = new Date(dateSigned).toISOString().slice(0, 19).replace('T', ' ');
+
+  // Handle PDF upload path
   const pdfPath = req.file ? `uploads/${req.file.filename}` : null;
 
+  // Log incoming data for debugging
+  console.log('Incoming data:', {
+    id,
+    name,
+    positionTitle,
+    schoolOffice,
+    district,
+    statusOfAppointment,
+    natureAppointment,
+    itemNo,
+    dateSigned: formattedDateSigned, // Log formatted date
+    remarks,
+    file: req.file ? req.file.filename : null,
+  });
+
+  // SQL query to update appointment details
   const sql = `
-    UPDATE \`appointment-details\`
+    UPDATE \`appointment_details\`
     SET 
       Name = ?, 
       PositionTitle = ?, 
       SchoolOffice = ?, 
+      District = ?, 
       StatusOfAppointment = ?, 
       NatureAppointment = ?, 
       ItemNo = ?, 
       DateSigned = ?, 
+      Remarks = ?, 
       pdfPath = COALESCE(?, pdfPath)
     WHERE id = ?
   `;
 
+  // Execute query with values
   db.query(
     sql,
     [
       name,
       positionTitle,
       schoolOffice,
+      district,
       statusOfAppointment,
       natureAppointment,
       itemNo,
-      dateSigned,
+      formattedDateSigned, // Use the formatted date
+      remarks,
       pdfPath,
       id
     ],
     (err, result) => {
-      if (err) return res.status(500).json({ error: 'Database error.' });
+      if (err) {
+        // Log SQL error for debugging
+        console.error('Database error:', err.sqlMessage);
+        return res.status(500).json({ error: 'Database error.', details: err.sqlMessage });
+      }
       res.status(200).json({ message: 'Appointment updated successfully!' });
     }
   );
 });
 
+
 // Delete appointment + delete PDF if exists
 router.delete('/appointment/:id', (req, res) => {
   const id = req.params.id;
 
-  const getSql = 'SELECT pdfPath FROM `appointment-details` WHERE id = ?';
+  const getSql = 'SELECT pdfPath FROM `appointment_details` WHERE id = ?';
   db.query(getSql, [id], (err, results) => {
     if (err) return res.status(500).json({ error: 'Error fetching appointment.' });
     if (results.length === 0) return res.status(404).json({ error: 'Appointment not found.' });
 
     const pdfPath = results[0].pdfPath;
 
-    const deleteSql = 'DELETE FROM `appointment-details` WHERE id = ?';
+    const deleteSql = 'DELETE FROM `appointment_details` WHERE id = ?';
     db.query(deleteSql, [id], (err) => {
       if (err) return res.status(500).json({ error: 'Database error during delete.' });
 
@@ -214,22 +270,29 @@ router.post('/appointments/bulk', upload.single('file'), (req, res) => {
     const sheetName = workbook.SheetNames[0];
     const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    if (!data.length) return res.status(400).json({ error: 'Empty or invalid file.' });
+    const filteredData = data.filter(row =>
+  row.Name?.toString().trim() !== '' &&
+  row.PositionTitle?.toString().trim() !== ''
+);
 
-    const values = data.map(row => [
-      row.Name || '',
-      row.PositionTitle || '',
-      row.SchoolOffice || '',
-      row.District || '',
-      row.StatusOfAppointment || '',
-      row.NatureAppointment || '',
-      row.ItemNo || '',
-      row.DateSigned || null,
-      row.remarks || '' // Include remarks with a default value if not provided
-    ]);
+  if (!filteredData.length) {
+  return res.status(400).json({ error: 'No valid data in file.' });
+}
+
+const values = filteredData.map(row => [
+  row.Name || '',
+  row.PositionTitle || '',
+  row.SchoolOffice || '',
+  row.District || '',
+  row.StatusOfAppointment || '',
+  row.NatureAppointment || '',
+  row.ItemNo || '',
+  row.DateSigned || null,
+  row.remarks || ''
+]);
 
     const sql = `
-      INSERT INTO \`appointment-details\`
+      INSERT INTO \`appointment_details\`
       (Name, PositionTitle, SchoolOffice, District, StatusOfAppointment, NatureAppointment, ItemNo, DateSigned, remarks)
       VALUES ?
     `;
@@ -265,7 +328,7 @@ router.post('/appointments/bulk-json', (req, res) => {
   ]);
 
   const sql = `
-    INSERT INTO \`appointment-details\` 
+    INSERT INTO \`appointment_details\` 
     (Name, PositionTitle, SchoolOffice, District, StatusOfAppointment, NatureAppointment, ItemNo, DateSigned, remarks)
     VALUES ?
   `;
@@ -281,10 +344,21 @@ router.post('/appointments/bulk-json', (req, res) => {
 
 // Bulk upsert: update if exists (by ItemNo), insert if not
 router.post('/appointments/bulk-update', (req, res) => {
-  const appointments = req.body;
+  let appointments = req.body;
 
   if (!Array.isArray(appointments) || appointments.length === 0) {
     return res.status(400).json({ error: 'Invalid or empty update payload.' });
+  }
+
+  // 🔍 Filter out rows that are completely empty or filled with whitespace
+  appointments = appointments.filter(row => {
+    return Object.values(row).some(
+      value => String(value || '').trim() !== ''
+    );
+  });
+
+  if (appointments.length === 0) {
+    return res.status(400).json({ error: 'All rows are blank or whitespace only.' });
   }
 
   const values = appointments.map(row => [
@@ -296,11 +370,11 @@ router.post('/appointments/bulk-update', (req, res) => {
     row.NatureAppointment || '',
     row.ItemNo || '',
     row.DateSigned || null,
-    row.remarks || '' // Include remarks with a default value if not provided
+    row.remarks === '' ? null : row.remarks // Convert empty remarks to NULL
   ]);
 
   const sql = `
-    INSERT INTO \`appointment-details\` 
+    INSERT INTO \`appointment_details\` 
       (Name, PositionTitle, SchoolOffice, District, StatusOfAppointment, NatureAppointment, ItemNo, DateSigned, remarks)
     VALUES ?
     ON DUPLICATE KEY UPDATE
@@ -311,7 +385,7 @@ router.post('/appointments/bulk-update', (req, res) => {
       StatusOfAppointment = VALUES(StatusOfAppointment),
       NatureAppointment = VALUES(NatureAppointment),
       DateSigned = VALUES(DateSigned),
-      remarks = VALUES(remarks) -- Ensure remarks is updated
+      remarks = VALUES(remarks)
   `;
 
   db.query(sql, [values], (err, result) => {
@@ -326,37 +400,19 @@ router.post('/appointments/bulk-update', (req, res) => {
 
 
 
-// Get all schools with district info
-router.get('/schools', (req, res) => {
-  const sql = `
-    SELECT
-      s.schoolID,
-      s.name AS schoolname,
-      d.name AS district
-    FROM
-      schools s
-    INNER JOIN
-      district d ON s.districtID = d.id
-  `;
-
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ error: 'Failed to fetch schools.' });
-    res.status(200).json(results);
-  });
-});
 
 
 // Release appointment
 router.post('/appointment/:id/release', (req, res) => {
   const id = req.params.id;
 
-  const sqlCheck = 'SELECT id FROM `appointment-details` WHERE id = ?';
+  const sqlCheck = 'SELECT id FROM `appointment_details` WHERE id = ?';
   db.query(sqlCheck, [id], (err, results) => {
     if (err) return res.status(500).json({ error: 'Database error during check.' });
     if (results.length === 0) return res.status(404).json({ error: 'Appointment not found.' });
 
     const sqlInsert = `
-      INSERT INTO \`appointment-releases\` (appointmentId, releasedAt)
+      INSERT INTO \`appointment_releases\` (appointmentId, releasedAt)
       VALUES (?, NOW())
     `;
 
@@ -373,7 +429,7 @@ router.get('/appointment/:id/release-info', (req, res) => {
 
   const sql = `
     SELECT releasedAt
-    FROM \`appointment-releases\`
+    FROM \`appointment_releases\`
     WHERE appointmentId = ?
   `;
 

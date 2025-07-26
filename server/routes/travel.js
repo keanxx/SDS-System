@@ -38,6 +38,22 @@ router.get('/travels/graph', (req, res) => {
   const cached = cache.getCache(cacheKey);
   if (cached) return res.json(cached);
 
+router.get('/travels/graph', (req, res) => {
+  const { type, employee_ID, year, month, positionTitle } = req.query;
+
+  if (!['year', 'month', 'week', 'date'].includes(type)) {
+    return res.status(400).json({ error: 'Invalid type' });
+  }
+
+  const employeeIdFilter = employee_ID ? parseInt(employee_ID) : null;
+  if (employee_ID && isNaN(employeeIdFilter)) {
+    return res.status(400).json({ error: 'Invalid employee ID' });
+  }
+
+  const cacheKey = `${type}-${employeeIdFilter || 'all'}-${year || 'all'}-${month || 'all'}-${positionTitle || 'all'}`;
+  const cached = cache.getCache(cacheKey);
+  if (cached) return res.json(cached);
+
   const groupFormat = {
     year: { label: 'YEAR(DatesFrom)', groupBy: 'YEAR(DatesFrom)', orderBy: 'YEAR(DatesFrom)' },
     month: { label: "CONCAT(YEAR(DatesFrom), '-', LPAD(MONTH(DatesFrom), 2, '0'))", groupBy: 'YEAR(DatesFrom), MONTH(DatesFrom)', orderBy: 'YEAR(DatesFrom), MONTH(DatesFrom)' },
@@ -45,7 +61,9 @@ router.get('/travels/graph', (req, res) => {
     date: { label: "DATE_FORMAT(DatesFrom, '%Y-%m-%d')", groupBy: 'DATE(DatesFrom)', orderBy: 'DATE(DatesFrom)' },
   }[type];
 
-  let query = `SELECT ${groupFormat.label} AS label, COUNT(*) AS count FROM travelauthority WHERE DatesFrom IS NOT NULL`;
+  let query = `SELECT ${groupFormat.label} AS label, COUNT(*) AS count 
+               FROM travelauthority 
+               WHERE DatesFrom IS NOT NULL`;
   const params = [];
 
   if (employeeIdFilter) {
@@ -68,6 +86,7 @@ router.get('/travels/graph', (req, res) => {
     params.push(`%${positionTitle}%`);
   }
 
+  // Ensure all columns are included in GROUP BY
   query += ` GROUP BY ${groupFormat.groupBy} ORDER BY ${groupFormat.orderBy}`;
 
   db.query(query, params, (err, results) => {
@@ -79,21 +98,22 @@ router.get('/travels/graph', (req, res) => {
           datasets: [{
             label: `Travel Entries by ${type}`,
             data: results.map(r => r.count),
-            backgroundColor: 'rgba(75, 192, 192, 0.6)'
-          }]
+            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          }],
         }
       : {
           labels: [],
           datasets: [{
             label: `Travel Entries by ${type}`,
             data: [],
-            backgroundColor: 'rgba(75, 192, 192, 0.6)'
-          }]
+            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          }],
         };
 
     cache.setCache(cacheKey, response);
     res.json(response);
   });
+});
 });
 
 
