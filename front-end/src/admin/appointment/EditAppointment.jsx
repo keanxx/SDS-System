@@ -55,39 +55,46 @@ const EditAppointment = () => {
   };
 
   const handleUpdate = async () => {
-    const formData = new FormData();
+  const formData = new FormData();
 
-    const fieldMap = {
-      Name: 'name',
-      PositionTitle: 'positionTitle',
-      SchoolOffice: 'schoolOffice',
-      District: 'district',
-      StatusOfAppointment: 'statusOfAppointment',
-      NatureAppointment: 'natureAppointment',
-      ItemNo: 'itemNo',
-      DateSigned: 'dateSigned',
-    };
-
-    for (let key in fieldMap) {
-      const frontendValue = editing[key];
-      formData.append(fieldMap[key], frontendValue || '');
-    }
-
-    if (editing.pdf) {
-      formData.append('pdf', editing.pdf); // attach if replaced
-    }
-
-    try {
-      await axios.put(`${API}/appointment/${editing.id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setOpen(false);
-      fetchAppointments();
-    } catch (err) {
-      console.error('Update failed:', err);
-      alert('Update failed.');
-    }
+  // Map front-end fields to back-end fields
+  const fieldMap = {
+    Name: 'name',
+    PositionTitle: 'positionTitle',
+    SchoolOffice: 'schoolOffice',
+    District: 'district',
+    StatusOfAppointment: 'statusOfAppointment',
+    NatureAppointment: 'natureAppointment',
+    ItemNo: 'itemNo',
+    DateSigned: 'dateSigned',
+    Remarks: 'remarks', // Added mapping for remarks
   };
+
+  // Append fields to formData
+  for (let key in fieldMap) {
+    const frontendValue = editing[key];
+    formData.append(fieldMap[key], frontendValue || '');
+  }
+
+  // Attach PDF if replaced
+  if (editing.pdf) {
+    formData.append('pdf', editing.pdf); // attach if replaced
+  }
+
+  try {
+    // Send update request to the backend
+    const response = await axios.put(`${API}/appointment/${editing.id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    console.log('Update successful:', response.data); // Log success response
+    setOpen(false); // Close modal/dialog
+    fetchAppointments(); // Refresh appointments list
+  } catch (err) {
+    console.error('Update failed:', err); // Log error
+    alert('Update failed. Please check the data and try again.'); // Show alert
+  }
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -172,7 +179,7 @@ const EditAppointment = () => {
                         'No PDF Available'
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: 'flex' }}>
                       <IconButton onClick={() => handleEditClick(row)}>
                         <Edit />
                       </IconButton>

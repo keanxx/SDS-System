@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const IconNavigate = ({ icon, text, to, color = 'blue' }) => {
+const IconNavigate = ({ icon, text, to, color = 'black' }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {

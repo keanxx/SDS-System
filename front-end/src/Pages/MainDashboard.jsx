@@ -1,6 +1,6 @@
 import React from 'react';
 import IconNavigate from '../Components/reusable_components/IconNavigate';
-import { ModeOfTravel, Groups } from '@mui/icons-material';
+import { ModeOfTravel, Groups, BookmarkBorder } from '@mui/icons-material';
 
 const MainDashboard = () => {
   return (
@@ -35,6 +35,12 @@ const MainDashboard = () => {
             icon={<Groups />}
             text="Appointments"
             to="/appointmentDetails"
+            color="black"
+          />
+           <IconNavigate
+            icon={<BookmarkBorder />}
+            text="Orders"
+            to="/orderDashboard"
             color="green"
           />
         </div>

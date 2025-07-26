@@ -92,7 +92,7 @@ const handleSubmit = async (e) => {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ maxWidth: 900, margin: 'auto', padding: 4 }}>
+      <Box sx={{ maxWidth: 855, margin: 'auto', padding: 4 }}>
         <Typography variant="h5" gutterBottom>
           Add Appointment
         </Typography>
@@ -216,18 +216,33 @@ const handleSubmit = async (e) => {
             
 
             {/* PDF Upload */}
-            <Grid item xs={12}>
-              <Button variant="outlined" component="label" fullWidth>
-                Upload PDF
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  hidden
-                  onChange={(e) => setPdfFile(e.target.files[0])}
-                />
-              </Button>
-              {pdfFile && <Typography variant="body2" mt={1}>{pdfFile.name}</Typography>}
-            </Grid>
+           <Grid item xs={12}>
+  <Button
+    variant="outlined"
+    component="label"
+    sx={{ minWidth: 250, maxWidth: 400, width: '100%' }} // <-- max width set
+    fullWidth
+  >
+    Upload PDF
+    <input
+      type="file"
+      accept="application/pdf"
+      hidden
+      onChange={(e) => setPdfFile(e.target.files[0])}
+    />
+  </Button>
+
+  {pdfFile && (
+    <Typography
+      variant="body2"
+      mt={1}
+      sx={{ maxWidth: 250, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+    >
+      {pdfFile.name}
+    </Typography>
+  )}
+</Grid>
+
           </Grid>
           <Box mt={3}>
             <Button type="submit" variant="contained" color="primary" fullWidth>
@@ -238,7 +253,7 @@ const handleSubmit = async (e) => {
 
         <Box
           sx={{
-            mt: 20,
+            mt: 4,
             borderTop: '1px solid #ccc',
             pt: 2,
             display: 'flex',

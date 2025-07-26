@@ -1,6 +1,6 @@
 import React from 'react';
 import { Drawer, AppBar, Toolbar, Typography, List, ListItem, ListItemIcon, ListItemText, Box, CssBaseline } from '@mui/material';
-import { ModeOfTravel, Groups, Settings } from '@mui/icons-material';
+import { ModeOfTravel, Groups, Settings, BookmarkBorder } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 
 const drawerWidth = 240;
@@ -8,7 +8,8 @@ const drawerWidth = 240;
 const navItems = [
   { text: 'Travels', icon: <ModeOfTravel />, to: '/createTravel' },
   { text: 'Appointments', icon: <Groups />, to: '/editAppointment' },
- 
+  { text: 'Orders', icon: <BookmarkBorder />, to: '/editOrder' },
+
 ];
 
 const MainDashboardAdmin = () => {

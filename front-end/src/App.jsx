@@ -14,6 +14,9 @@ import AppointmentDetails from './Pages/appointment/AppointmentDashboard';
 import CreateTravel from './admin/travel/CreateTravel';
 import MainDashboardAdmin from './admin/MainDashboardAdmin';
 import EditTravel from './admin/travel/EditTravel';
+import CreateOrder from './admin/order_admin/CreateOrder';
+import OrderDashboard from './Pages/order/OrderDashboard';
+import EditOrder from './admin/order_admin/EditOrder';
 
 const App = () => {
   return (
@@ -33,12 +36,18 @@ const App = () => {
         <Route path="/appointmentDetails" element={<AppointmentDetails/>} />
         <Route path="/appointmentStatistics" element={<AppointmentStatistics/>} />
 
+          {/*SDS appointment system*/}
+          <Route path="/orderDashboard" element={<OrderDashboard />} />
+          <Route path="/editOrder" element={<EditOrder />} />
+
          {/*admin appointment system*/}
           <Route path="/createAppointment" element={<CreateAppointment />} />
           <Route path="/editAppointment" element={<EditAppointment />} />
 
           <Route path="/admin" element={<MainDashboardAdmin />} />
-
+          
+          {/*admin appointment system*/}
+          <Route path="/createOrder" element={<CreateOrder/>} />
         </Routes>
 
     </Router>

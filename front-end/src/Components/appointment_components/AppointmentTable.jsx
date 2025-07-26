@@ -26,6 +26,7 @@ import {
 const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [positionOptions, setPositionOptions] = useState([]);
 
   const [natureOptions, setNatureOptions] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
@@ -34,7 +35,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedReleaseStatus, setSelectedReleaseStatus] = useState(''); // Dropdown filter for release status
-
+  const [selectedPosition, setSelectedPosition] = useState(''); // Dropdown filter for position
   const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -47,13 +48,14 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
         console.log('Debugging appointments:', res.data); // Debugging
         setAppointments(res.data);
         setLoading(false);
-
+        const uniquePositions = [...new Set(res.data.map(item => item.PositionTitle))];
         const uniqueNature = [...new Set(res.data.map(item => item.NatureAppointment))];
         const uniqueStatus = [...new Set(res.data.map(item => item.StatusOfAppointment))];
         const uniqueDistricts = [...new Set(res.data.map(item => item.District))];
         setNatureOptions(uniqueNature);
         setStatusOptions(uniqueStatus);
         setDistrictOptions(uniqueDistricts);
+        setPositionOptions(uniquePositions);
       })
       .catch((err) => {
         console.error('Error fetching appointments:', err);
@@ -135,13 +137,14 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
       const matchesNature = selectedNature ? row.NatureAppointment === selectedNature : true;
       const matchesStatus = selectedStatus ? row.StatusOfAppointment === selectedStatus : true;
       const matchesDistrict = selectedDistrict ? row.District === selectedDistrict : true;
+      const matchesPosition = selectedPosition ? row.PositionTitle === selectedPosition : true; // Matches based on position dropdown
       const matchesReleaseStatus =
         selectedReleaseStatus === 'Released'
           ? row.releasedAt
           : selectedReleaseStatus === 'Not Released'
           ? !row.releasedAt
           : true; // Matches based on release status dropdown
-      return matchesSearch && matchesNature && matchesStatus && matchesDistrict && matchesReleaseStatus;
+      return matchesSearch && matchesNature && matchesStatus && matchesDistrict && matchesReleaseStatus && matchesPosition;
     })
     .sort((a, b) => {
       const surnameA = a.Name.split(' ').slice(-1)[0].toLowerCase(); // Extract surname
@@ -161,18 +164,21 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
           size="small"
         />
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <FormControl sx={{ minWidth: 200 }} size="small">
-            <InputLabel>Release Status</InputLabel>
+          
+           <FormControl sx={{ minWidth: 200 }} size="small">
+            <InputLabel>Position</InputLabel>
             <Select
-              value={selectedReleaseStatus}
-              onChange={(e) => setSelectedReleaseStatus(e.target.value)}
-              label="Release Status"
+              value={selectedPosition}
+              onChange={(e) => setSelectedPosition(e.target.value)}
+              label="Position"
             >
               <MenuItem value=""><em>All</em></MenuItem>
-              <MenuItem value="Released">Released</MenuItem>
-              <MenuItem value="Not Released">Not Released</MenuItem>
+              {positionOptions.map((option, idx) => (
+                <MenuItem key={idx} value={option}>{option}</MenuItem>
+              ))}
             </Select>
           </FormControl>
+         
           <FormControl sx={{ minWidth: 200 }} size="small">
             <InputLabel>District</InputLabel>
             <Select
@@ -182,6 +188,20 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
             >
               <MenuItem value=""><em>All</em></MenuItem>
               {districtOptions.map((option, idx) => (
+                <MenuItem key={idx} value={option}>{option}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <FormControl sx={{ minWidth: 200 }} size="small">
+            <InputLabel>Status of Appointment</InputLabel>
+            <Select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              label="Status of Appointment"
+            >
+              <MenuItem value=""><em>All</em></MenuItem>
+              {statusOptions.map((option, idx) => (
                 <MenuItem key={idx} value={option}>{option}</MenuItem>
               ))}
             </Select>
@@ -199,17 +219,16 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               ))}
             </Select>
           </FormControl>
-          <FormControl sx={{ minWidth: 200 }} size="small">
-            <InputLabel>Status of Appointment</InputLabel>
+           <FormControl sx={{ minWidth: 200 }} size="small">
+            <InputLabel>Release Status</InputLabel>
             <Select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              label="Status of Appointment"
+              value={selectedReleaseStatus}
+              onChange={(e) => setSelectedReleaseStatus(e.target.value)}
+              label="Release Status"
             >
               <MenuItem value=""><em>All</em></MenuItem>
-              {statusOptions.map((option, idx) => (
-                <MenuItem key={idx} value={option}>{option}</MenuItem>
-              ))}
+              <MenuItem value="Released">Released</MenuItem>
+              <MenuItem value="Not Released">Not Released</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -230,7 +249,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
                     sx={{
                       whiteSpace: 'nowrap',
                       width: 180,
-                      textAlign: 'center',
+                      textAlign: 'start',
                       position: 'sticky',
                       left: 0,
                       backgroundColor: '#f0f0f0',
@@ -239,14 +258,14 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
                   >
                     <strong>Name</strong>
                   </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', width: 150, textAlign: 'center' }}><strong>Position Title</strong></TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', width: 160, textAlign: 'center' }}><strong>School/Office</strong></TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', width: 160, textAlign: 'center' }}><strong>District</strong></TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', width: 160, textAlign: 'center' }}><strong>Status of Appointment</strong></TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', width: 160, textAlign: 'center' }}><strong>Nature of Appointment</strong></TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', width: 130, textAlign: 'center' }}><strong>Item No.</strong></TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', width: 130, textAlign: 'center' }}><strong>Date Signed</strong></TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap', width: 130, textAlign: 'center' }}><strong>Released</strong></TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 150, textAlign: 'start' }}><strong>Position Title</strong></TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 160, textAlign: 'start' }}><strong>School/Office</strong></TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 160, textAlign: 'start' }}><strong>District</strong></TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 160, textAlign: 'start' }}><strong>Status of Appointment</strong></TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 160, textAlign: 'start' }}><strong>Nature of Appointment</strong></TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 130, textAlign: 'start' }}><strong>Item No.</strong></TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 130, textAlign: 'start' }}><strong>Date Signed</strong></TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', width: 130, textAlign: 'start' }}><strong>Released</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -289,10 +308,10 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
                       </TableCell>
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.PositionTitle}</TableCell>
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.SchoolOffice}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{row.District}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{row.StatusOfAppointment}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{row.NatureAppointment}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>{row.District}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>{row.StatusOfAppointment}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>{row.NatureAppointment}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>
                         {row.ItemNo?.replace(' ', '\n')}
                       </TableCell>
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>

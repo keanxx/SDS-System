@@ -1,28 +1,28 @@
 import React from 'react';
 import LineGraphAppointment from '../../Components/appointment_components/LineGraphAppointment';
 import OverviewAppointment from '../../Components/appointment_components/OverviewAppointment';
-import Header from '../../Components/Header';
 import BarGraphAppointment from '../../Components/appointment_components/BarGraphAppoinment';
 import PieChartAppointment from '../../Components/appointment_components/PieChartAppointment';
+import { AppBar, Toolbar, Typography, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const AppointmentStatistics = () => {
-  const navLinks = [
-    { label: 'Dashboard', path: '/' },
-    { label: 'Appointments', path: '/appointmentDetails' },
-    { label: 'Statistics', path: '/appointmentStatistics' },
-  ];
+  const navigate = useNavigate();
 
   return (
     <div className="w-full  flex flex-col bg-white">
       {/* Header Section */}
-      <div className="w-full">
-        <Header
-          icon={<img src="/appointmentLogo.jpg" alt="logo" className="w-12 h-12 object-contain" />}
-          text="Appointment | Statistics"
-          navLinks={navLinks}
-        />
-      </div>
-
+     <AppBar position="static"
+        sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, backgroundColor: '#1e293b' }}>
+        <Toolbar>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+           Appointments Statistics
+          </Typography>
+          <Button color="inherit" onClick={() => navigate('/')}>Dashboard</Button>
+          <Button color="inherit" onClick={() => navigate('/appointmentDetails')}>Appointments</Button>
+          <Button color="inherit" onClick={() => navigate('/appointmentStatistics')}>Statistics</Button>
+        </Toolbar>
+      </AppBar>
       {/* Content Section */}
       <div className="flex flex-col w-full  flex-grow p-3 ">
         {/* Overview Section */}
