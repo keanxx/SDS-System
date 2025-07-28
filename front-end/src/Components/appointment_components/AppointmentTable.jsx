@@ -153,19 +153,36 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
     });
 
   return (
-    <Box sx={{ margin: 'auto', px: 3, py: 3 }}>
+    <Box sx={{ margin: 'auto', px: { xs: 1, sm: 2, md: 3 }, py: { xs: 1, sm: 2, md: 3 } }}>
       {/* Search and Filters */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', md: 'center' },
+          mb: 3,
+          gap: { xs: 2, md: 0 },
+        }}
+      >
         <TextField
-          sx={{ minWidth: 350 }}
+          sx={{ minWidth: { xs: '100%', sm: 250, md: 350 }, maxWidth: 350, mb: { xs: 2, md: 0 } }}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           label="Search here"
           size="small"
+          fullWidth={true}
         />
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          
-           <FormControl sx={{ minWidth: 200 }} size="small">
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+            width: { xs: '100%', md: 'auto' },
+            justifyContent: { xs: 'flex-start', md: 'flex-end' },
+          }}
+        >
+          <FormControl sx={{ minWidth: 150, flex: 1 }} size="small" fullWidth={true}>
             <InputLabel>Position</InputLabel>
             <Select
               value={selectedPosition}
@@ -178,8 +195,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               ))}
             </Select>
           </FormControl>
-         
-          <FormControl sx={{ minWidth: 200 }} size="small">
+          <FormControl sx={{ minWidth: 150, flex: 1 }} size="small" fullWidth={true}>
             <InputLabel>District</InputLabel>
             <Select
               value={selectedDistrict}
@@ -192,8 +208,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               ))}
             </Select>
           </FormControl>
-          
-          <FormControl sx={{ minWidth: 200 }} size="small">
+          <FormControl sx={{ minWidth: 150, flex: 1 }} size="small" fullWidth={true}>
             <InputLabel>Status of Appointment</InputLabel>
             <Select
               value={selectedStatus}
@@ -206,7 +221,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               ))}
             </Select>
           </FormControl>
-          <FormControl sx={{ minWidth: 200 }} size="small">
+          <FormControl sx={{ minWidth: 150, flex: 1 }} size="small" fullWidth={true}>
             <InputLabel>Nature of Appointment</InputLabel>
             <Select
               value={selectedNature}
@@ -219,7 +234,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               ))}
             </Select>
           </FormControl>
-           <FormControl sx={{ minWidth: 200 }} size="small">
+          <FormControl sx={{ minWidth: 150, flex: 1 }} size="small" fullWidth={true}>
             <InputLabel>Release Status</InputLabel>
             <Select
               value={selectedReleaseStatus}
@@ -240,8 +255,16 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
           <CircularProgress />
         </Box>
       ) : (
-        <Box sx={{ width: '100%', maxWidth: '100%' }}>
-          <TableContainer component={Paper} elevation={2} sx={{ maxHeight: 500, overflow: 'auto' }}>
+        <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
+          <TableContainer
+            component={Paper}
+            elevation={2}
+            sx={{
+              maxHeight: 500,
+              overflow: 'auto',
+              minWidth: { xs: 700, sm: 900 },
+            }}
+          >
             <Table stickyHeader>
               <TableHead>
                 <TableRow sx={{ backgroundColor: '#f0f0f0' }}>
@@ -347,8 +370,8 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
             </Table>
           </TableContainer>
           {/* Total Data Count */}
-          <Box sx={{ mt: 2, textAlign: 'end' }}>
-            <Typography variant="body1" sx={{fontWeight: 'bold'}}>
+          <Box sx={{ mt: 2, textAlign: { xs: 'center', md: 'end' } }}>
+            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
               Total Entries: {filteredAppointments.length}
             </Typography>
           </Box>

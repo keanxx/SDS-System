@@ -16,8 +16,15 @@ import {
   Select,
   FormControl,
   InputLabel,
+  useMediaQuery,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Stack,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import dayjs from 'dayjs';
+import { useTheme } from '@mui/material/styles';
 
 const TravelDetails = ({ searchQuery: initialSearchQuery }) => {
   const [data, setData] = useState([]);
@@ -31,6 +38,9 @@ const TravelDetails = ({ searchQuery: initialSearchQuery }) => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const baseURL = import.meta.env.VITE_API_URL;
+
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,14 +107,17 @@ const TravelDetails = ({ searchQuery: initialSearchQuery }) => {
   }
 
   return (
-    <Paper sx={{ p: 2, mt: 2 }}>
+    <Paper sx={{ p: { xs: 1, sm: 2 }, mt: 2 }}>
       <Typography variant="h6" mb={2}>
         Travel Details
       </Typography>
 
       {/* Filters */}
-      <Box display="flex" flexDirection="row" flexWrap="wrap" gap={2} mb={2}>
-        {/* Search Field */}
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={2}
+        mb={2}
+      >
         <Box flex={1}>
           <TextField
             fullWidth
@@ -113,12 +126,11 @@ const TravelDetails = ({ searchQuery: initialSearchQuery }) => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             label="Search"
+            size="small"
           />
         </Box>
-
-        {/* Station Filter */}
         <Box flex={1}>
-          <FormControl fullWidth variant="outlined">
+          <FormControl fullWidth variant="outlined" size="small">
             <InputLabel id="station-filter-label">Filter by Station</InputLabel>
             <Select
               labelId="station-filter-label"
@@ -135,10 +147,8 @@ const TravelDetails = ({ searchQuery: initialSearchQuery }) => {
             </Select>
           </FormControl>
         </Box>
-
-        {/* Area Filter */}
         <Box flex={1}>
-          <FormControl fullWidth variant="outlined">
+          <FormControl fullWidth variant="outlined" size="small">
             <InputLabel id="area-filter-label">Filter by Area</InputLabel>
             <Select
               labelId="area-filter-label"
@@ -155,10 +165,8 @@ const TravelDetails = ({ searchQuery: initialSearchQuery }) => {
             </Select>
           </FormControl>
         </Box>
-
-        {/* Position Filter */}
         <Box flex={1}>
-          <FormControl fullWidth variant="outlined">
+          <FormControl fullWidth variant="outlined" size="small">
             <InputLabel id="position-filter-label">Filter by Position</InputLabel>
             <Select
               labelId="position-filter-label"
@@ -175,67 +183,121 @@ const TravelDetails = ({ searchQuery: initialSearchQuery }) => {
             </Select>
           </FormControl>
         </Box>
-      </Box>
+      </Stack>
 
-      {/* Table */}
-      <TableContainer component={Paper} sx={{ maxHeight: 500, overflowY: 'auto' }}>
-        <Table stickyHeader>
-          <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Position</TableCell>
-              <TableCell>Station</TableCell>
-              <TableCell>Purpose / Attachment</TableCell>
-              <TableCell>Host</TableCell>
-              <TableCell>Travel Period</TableCell>
-              <TableCell>Destination</TableCell>
-              <TableCell>Source of Fund</TableCell>
-              <TableCell>Area</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredData.map((row, index) => (
-              <TableRow key={index}>
-                <TableCell>{row.Fullname}</TableCell>
-                <TableCell>{row.PositionDesignation}</TableCell>
-                <TableCell>{row.Station}</TableCell>
-                <TableCell>
-                  <div>{row.Purpose || 'N/A'}</div>
-                  {row.Attachment ? (
-                    <a
-                      href={`${baseURL}${row.Attachment}`}
-                     // href={`${baseURL}${t.Attachment}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: '#007BFF', textDecoration: 'underline', display: 'inline-block', marginTop: '4px' }}
-                    >
-                      View PDF
-                    </a>
-                  ) : (
-                    <div style={{ fontStyle: 'italic', color: '#888' }}>None</div>
-                  )}
-                </TableCell>
-                <TableCell>{row.Host}</TableCell>
-                <TableCell>
-                  {row.DatesFrom && row.DatesTo
-                    ? `${dayjs(row.DatesFrom).format('MMM DD')} - ${dayjs(row.DatesTo).format('MMM DD, YYYY')}`
-                    : 'N/A'}
-                </TableCell>
-                <TableCell>{row.Destination}</TableCell>
-                <TableCell>{row.sof}</TableCell>
-                <TableCell>{row.Area}</TableCell>
-              </TableRow>
-            ))}
-            {filteredData.length === 0 && (
+      {/* Responsive Table or Accordion */}
+      {!isSmall ? (
+        <TableContainer component={Paper} sx={{ maxHeight: 500, overflowY: 'auto' }}>
+          <Table stickyHeader>
+            <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
               <TableRow>
-                <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                  No records found.
-                </TableCell>
+                <TableCell>Name</TableCell>
+                <TableCell>Position</TableCell>
+                <TableCell>Station</TableCell>
+                <TableCell>Purpose / Attachment</TableCell>
+                <TableCell>Host</TableCell>
+                <TableCell>Travel Period</TableCell>
+                <TableCell>Destination</TableCell>
+                <TableCell>Source of Fund</TableCell>
+                <TableCell>Area</TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {filteredData.map((row, index) => (
+                <TableRow key={index}>
+                  <TableCell>{row.Fullname}</TableCell>
+                  <TableCell>{row.PositionDesignation}</TableCell>
+                  <TableCell>{row.Station}</TableCell>
+                  <TableCell>
+                    <div>{row.Purpose || 'N/A'}</div>
+                    {row.Attachment ? (
+                      <a
+                        href={`${baseURL}${row.Attachment}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: '#007BFF',
+                          textDecoration: 'underline',
+                          display: 'inline-block',
+                          marginTop: '4px'
+                        }}
+                      >
+                        View PDF
+                      </a>
+                    ) : (
+                      <div style={{ fontStyle: 'italic', color: '#888' }}>None</div>
+                    )}
+                  </TableCell>
+                  <TableCell>{row.Host}</TableCell>
+                  <TableCell>
+                    {row.DatesFrom && row.DatesTo
+                      ? `${dayjs(row.DatesFrom).format('MMM DD')} - ${dayjs(row.DatesTo).format('MMM DD, YYYY')}`
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell>{row.Destination}</TableCell>
+                  <TableCell>{row.sof}</TableCell>
+                  <TableCell>{row.Area}</TableCell>
+                </TableRow>
+              ))}
+              {filteredData.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                    No records found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <Box>
+          {filteredData.length === 0 ? (
+            <Box textAlign="center" py={4}>
+              No records found.
+            </Box>
+          ) : (
+            filteredData.map((row, index) => (
+              <Accordion key={index} sx={{ mb: 1 }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography fontWeight="bold">{row.Fullname}</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Stack spacing={1}>
+                    <Typography variant="body2"><b>Position:</b> {row.PositionDesignation}</Typography>
+                    <Typography variant="body2"><b>Station:</b> {row.Station}</Typography>
+                    <Typography variant="body2"><b>Purpose:</b> {row.Purpose || 'N/A'}</Typography>
+                    <Typography variant="body2">
+                      <b>Attachment:</b>{' '}
+                      {row.Attachment ? (
+                        <a
+                          href={`${baseURL}${row.Attachment}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#007BFF', textDecoration: 'underline' }}
+                        >
+                          View PDF
+                        </a>
+                      ) : (
+                        <span style={{ fontStyle: 'italic', color: '#888' }}>None</span>
+                      )}
+                    </Typography>
+                    <Typography variant="body2"><b>Host:</b> {row.Host}</Typography>
+                    <Typography variant="body2">
+                      <b>Travel Period:</b>{' '}
+                      {row.DatesFrom && row.DatesTo
+                        ? `${dayjs(row.DatesFrom).format('MMM DD')} - ${dayjs(row.DatesTo).format('MMM DD, YYYY')}`
+                        : 'N/A'}
+                    </Typography>
+                    <Typography variant="body2"><b>Destination:</b> {row.Destination}</Typography>
+                    <Typography variant="body2"><b>Source of Fund:</b> {row.sof}</Typography>
+                    <Typography variant="body2"><b>Area:</b> {row.Area}</Typography>
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
+            ))
+          )}
+        </Box>
+      )}
     </Paper>
   );
 };
