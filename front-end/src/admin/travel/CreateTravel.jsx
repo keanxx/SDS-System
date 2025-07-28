@@ -17,9 +17,14 @@ const CreateTravel = () => {
       />
 
       {/* Main Content */}
-      <section className="bg-white/50 backdrop-blur-md border-gray-500/30 border rounded-lg justify-center space-x-5 flex px-10 py-5 mt-5 min-w-[900px] max-w-[95%] w-full">
+      <section className="bg-white/50 backdrop-blur-mdrounded-lg justify-center space-x-5 flex px-10 py-5 mt-5 min-w-[900px] max-w-[95%] w-full">
+       <div className='w-full flex flex-col items-center justify-center space-y-5'>
+        
         <TravelInput />
         <BulkTravel />
+       </div>
+
+       
       </section>
     </div>
   );

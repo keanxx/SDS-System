@@ -23,42 +23,27 @@ router.get('/travels', (req, res) => {
 
 // Graph endpoint
 router.get('/travels/graph', (req, res) => {
-  const { type, employee_ID, year, month, positionTitle } = req.query;
+  const { type, year, month, position, station } = req.query;
 
-  if (!['year', 'month', 'week', 'date'].includes(type)) {
+  // Validate the "type" parameter
+  if (!['week', 'month', 'year'].includes(type)) {
     return res.status(400).json({ error: 'Invalid type' });
   }
 
-  const employeeIdFilter = employee_ID ? parseInt(employee_ID) : null;
-  if (employee_ID && isNaN(employeeIdFilter)) {
-    return res.status(400).json({ error: 'Invalid employee ID' });
-  }
-
-  const cacheKey = `${type}-${employeeIdFilter || 'all'}-${year || 'all'}-${month || 'all'}-${positionTitle || 'all'}`;
-  const cached = cache.getCache(cacheKey);
-  if (cached) return res.json(cached);
-
-router.get('/travels/graph', (req, res) => {
-  const { type, employee_ID, year, month, positionTitle } = req.query;
-
-  if (!['year', 'month', 'week', 'date'].includes(type)) {
-    return res.status(400).json({ error: 'Invalid type' });
-  }
-
-  const employeeIdFilter = employee_ID ? parseInt(employee_ID) : null;
-  if (employee_ID && isNaN(employeeIdFilter)) {
-    return res.status(400).json({ error: 'Invalid employee ID' });
-  }
-
-  const cacheKey = `${type}-${employeeIdFilter || 'all'}-${year || 'all'}-${month || 'all'}-${positionTitle || 'all'}`;
-  const cached = cache.getCache(cacheKey);
-  if (cached) return res.json(cached);
-
+  // Dynamic group format for each type
   const groupFormat = {
-    year: { label: 'YEAR(DatesFrom)', groupBy: 'YEAR(DatesFrom)', orderBy: 'YEAR(DatesFrom)' },
-    month: { label: "CONCAT(YEAR(DatesFrom), '-', LPAD(MONTH(DatesFrom), 2, '0'))", groupBy: 'YEAR(DatesFrom), MONTH(DatesFrom)', orderBy: 'YEAR(DatesFrom), MONTH(DatesFrom)' },
-    week: { label: "CONCAT(YEAR(DatesFrom), '-W', LPAD(WEEK(DatesFrom), 2, '0'))", groupBy: 'YEAR(DatesFrom), WEEK(DatesFrom)', orderBy: 'YEAR(DatesFrom), WEEK(DatesFrom)' },
-    date: { label: "DATE_FORMAT(DatesFrom, '%Y-%m-%d')", groupBy: 'DATE(DatesFrom)', orderBy: 'DATE(DatesFrom)' },
+    week: {
+      label: "CONCAT(YEAR(DatesFrom), '-W', LPAD(WEEK(DatesFrom), 2, '0'))",
+      groupBy: 'label',
+    },
+    month: {
+      label: "CONCAT(YEAR(DatesFrom), '-', LPAD(MONTH(DatesFrom), 2, '0'))",
+      groupBy: 'label',
+    },
+    year: {
+      label: 'YEAR(DatesFrom)',
+      groupBy: 'label',
+    },
   }[type];
 
   let query = `SELECT ${groupFormat.label} AS label, COUNT(*) AS count 
@@ -66,56 +51,60 @@ router.get('/travels/graph', (req, res) => {
                WHERE DatesFrom IS NOT NULL`;
   const params = [];
 
-  if (employeeIdFilter) {
-    query += ' AND employee_ID = ?';
-    params.push(employeeIdFilter);
-  }
-
+  // Add year filter
   if (year) {
     query += ' AND YEAR(DatesFrom) = ?';
-    params.push(year);
+    params.push(Number(year));
   }
 
-  if (month) {
+  // Add month filter if "Weekly" is selected
+  if (month && type === 'week') {
     query += ' AND MONTH(DatesFrom) = ?';
-    params.push(month);
+    params.push(Number(month));
   }
 
-  if (positionTitle) {
+  // Add position filter
+  if (position && position !== 'All') {
     query += ' AND PositionDesignation LIKE ?';
-    params.push(`%${positionTitle}%`);
+    params.push(`%${position}%`);
   }
 
-  // Ensure all columns are included in GROUP BY
-  query += ` GROUP BY ${groupFormat.groupBy} ORDER BY ${groupFormat.orderBy}`;
+  // Add station filter
+  if (station && station !== 'All') {
+    query += ' AND Station LIKE ?';
+    params.push(`%${station}%`);
+  }
 
+  // Group by the alias "label"
+  query += ` GROUP BY ${groupFormat.groupBy} ORDER BY ${groupFormat.groupBy}`;
+
+  // Debugging: Log the query and parameters
+  console.log('SQL Query:', query);
+  console.log('Parameters:', params);
+
+  // Execute the query
   db.query(query, params, (err, results) => {
-    if (err) return res.status(500).json({ error: 'Failed to retrieve graph data', details: err.message });
+    if (err) {
+      console.error('Query Error:', err);
+      return res.status(500).json({ error: 'Failed to retrieve graph data', details: err.message });
+    }
 
-    const response = results.length
-      ? {
-          labels: results.map(r => r.label),
-          datasets: [{
-            label: `Travel Entries by ${type}`,
-            data: results.map(r => r.count),
-            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-          }],
-        }
-      : {
-          labels: [],
-          datasets: [{
-            label: `Travel Entries by ${type}`,
-            data: [],
-            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-          }],
-        };
+    // Format the response
+    const response = {
+      labels: results.map((r) => r.label),
+      datasets: [
+        {
+          label: `Travel Entries by ${type}`,
+          data: results.map((r) => r.count),
+          backgroundColor: 'rgba(76, 175, 80, 0.3)',
+          borderColor: '#4caf50',
+        },
+      ],
+    };
 
-    cache.setCache(cacheKey, response);
     res.json(response);
   });
 });
-});
-
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {

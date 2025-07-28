@@ -59,7 +59,6 @@ router.post('/orders', upload.single('pdf'), (req, res) => {
     address,
     position,
     school,
-
     date_signed,
   } = req.body;
 

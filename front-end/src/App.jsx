@@ -17,39 +17,44 @@ import EditTravel from './admin/travel/EditTravel';
 import CreateOrder from './admin/order_admin/CreateOrder';
 import OrderDashboard from './Pages/order/OrderDashboard';
 import EditOrder from './admin/order_admin/EditOrder';
+import Footer from './Components/Footer'; // make sure path is correct
 
 const App = () => {
   return (
     <Router>
-     
-        <Routes>
-          <Route path="/travelsDashboard" element={<Dashboard/>} />
-          <Route path="/statistics" element={<Statistics />} />
-          <Route path="/travels" element={<Travels/>} />
+      <div className="min-h-screen flex flex-col">
+        <main className="flex-grow">
+          <Routes>
+            <Route path="/travelsDashboard" element={<Dashboard />} />
+            <Route path="/statistics" element={<Statistics />} />
+            <Route path="/travels" element={<Travels />} />
 
-        {/*admin travel */}
-          <Route path="/createTravel" element={<CreateTravel/>} />
-          <Route path="/editTravel" element={<EditTravel/>} />
-          <Route path="/" element={<MainDashboard/>} />
-        
-        {/*SDS appointment system*/}
-        <Route path="/appointmentDetails" element={<AppointmentDetails/>} />
-        <Route path="/appointmentStatistics" element={<AppointmentStatistics/>} />
+            {/* admin travel */}
+            <Route path="/createTravel" element={<CreateTravel />} />
+            <Route path="/editTravel" element={<EditTravel />} />
+            <Route path="/" element={<MainDashboard />} />
 
-          {/*SDS appointment system*/}
-          <Route path="/orderDashboard" element={<OrderDashboard />} />
-          <Route path="/editOrder" element={<EditOrder />} />
+            {/* SDS appointment system */}
+            <Route path="/appointmentDetails" element={<AppointmentDetails />} />
+            <Route path="/appointmentStatistics" element={<AppointmentStatistics />} />
 
-         {/*admin appointment system*/}
-          <Route path="/createAppointment" element={<CreateAppointment />} />
-          <Route path="/editAppointment" element={<EditAppointment />} />
+            {/* SDS order system */}
+            <Route path="/orderDashboard" element={<OrderDashboard />} />
+            <Route path="/editOrder" element={<EditOrder />} />
 
-          <Route path="/admin" element={<MainDashboardAdmin />} />
-          
-          {/*admin appointment system*/}
-          <Route path="/createOrder" element={<CreateOrder/>} />
-        </Routes>
+            {/* admin appointment system */}
+            <Route path="/createAppointment" element={<CreateAppointment />} />
+            <Route path="/editAppointment" element={<EditAppointment />} />
 
+            {/* admin main dashboard */}
+            <Route path="/admin" element={<MainDashboardAdmin />} />
+
+            {/* admin order system */}
+            <Route path="/createOrder" element={<CreateOrder />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
     </Router>
   );
 };

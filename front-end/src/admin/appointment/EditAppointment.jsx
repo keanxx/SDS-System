@@ -21,9 +21,9 @@ const EditAppointment = () => {
   const navigate = useNavigate();
   const baseURL = import.meta.env.VITE_API_URL ;
 
-  const API = `${baseURL}/api`;
+
   const fetchAppointments = async () => {
-    const res = await axios.get(`${API}/appointments`);
+    const res = await axios.get(`${baseURL}/api/appointments`);
     setAppointments(res.data);
     setFilteredAppointments(res.data); // Initialize filtered appointments
   };
@@ -49,7 +49,7 @@ const EditAppointment = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this record?')) {
-      await axios.delete(`${API}/appointment/${id}`);
+      await axios.delete(`${baseURL}/api/appointment/${id}`);
       fetchAppointments();
     }
   };
@@ -83,7 +83,7 @@ const EditAppointment = () => {
 
   try {
     // Send update request to the backend
-    const response = await axios.put(`${API}/appointment/${editing.id}`, formData, {
+    const response = await axios.put(`${baseURL}/api/appointment/${editing.id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
 
@@ -169,7 +169,8 @@ const EditAppointment = () => {
                     <TableCell>
                       {row.pdfPath ? (
                         <a
-                          href={`http://localhost:5000/${row.pdfPath}`}
+                        
+                            href={`${baseURL}/${row.pdfPath}`}
                           target="_blank"
                           rel="noreferrer"
                         >

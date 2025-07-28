@@ -182,7 +182,7 @@ const EditOrder = () => {
                     <TableCell sx={{color: row.pdf_path ? 'blue' : 'red'}}>
                       {row.pdf_path ? (
                         <a
-                          href={`http://localhost:5000/${row.pdf_path}`}
+                          href={`${baseURL}/${row.pdf_path}`}
                           target="_blank"
                           rel="noreferrer"
                         >

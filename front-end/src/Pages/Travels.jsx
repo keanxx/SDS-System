@@ -4,20 +4,8 @@ import TravelDetails from '../Components/TravelDetails';
 import { AppBar, Toolbar, Typography, Button } from '@mui/material';
 
 const Travels = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+
   const navigate = useNavigate();
-
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-  };
-
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-  };
-
-  const handleButton = () => {
-    navigate('/admin');
-  };
 
   return (
     <>
@@ -41,21 +29,9 @@ const Travels = () => {
 
           {/* Content Section */}
           <div className="flex-grow min-w-[1000px] w-full">
-            <section className="bg-white/50 backdrop-blur-md border-green-500/30 border rounded-lg p-10">
-              <form
-                onSubmit={handleSearchSubmit}
-                className="w-full max-w-[350px] min-w-[250px] flex flex-col mb-5"
-              >
-                <input
-                  type="text"
-                  placeholder="Search here..."
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  className="w-full border border-gray-500/30 p-2 rounded"
-                />
-              </form>
+            <section className="bg-white/50 backdrop-blur-md border-green-500/30 border rounded-lg ">
               <div className="w-full">
-                <TravelDetails searchQuery={searchQuery} />
+                <TravelDetails/>
               </div>
             </section>
           </div>

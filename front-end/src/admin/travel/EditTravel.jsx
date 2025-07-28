@@ -8,6 +8,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import axios from 'axios';
 import Header from '../../Components/Header';
+import dayjs from 'dayjs';
 
 const AdminTravelTable = () => {
   const [travels, setTravels] = useState([]);
@@ -16,6 +17,7 @@ const AdminTravelTable = () => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
   const [editDialog, setEditDialog] = useState({ open: false, data: null });
 const [editFile, setEditFile] = useState(null);
+  const baseURL = import.meta.env.VITE_API_URL;
 
 
   // Pagination
@@ -28,7 +30,7 @@ const [editFile, setEditFile] = useState(null);
 
   const fetchTravels = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/travels');
+      const res = await axios.get(`${baseURL}/api/travels`);
       setTravels(res.data);
       setFiltered(res.data);
     } catch (err) {
@@ -44,7 +46,7 @@ const [editFile, setEditFile] = useState(null);
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/travels/${deleteDialog.id}`);
+      await axios.delete(`${baseURL}/api/travels/${deleteDialog.id}`);
       setDeleteDialog({ open: false, id: null });
       fetchTravels();
     } catch (err) {
@@ -100,7 +102,7 @@ const [editFile, setEditFile] = useState(null);
                 <TableCell>
                   {t.Attachment ? (
                     <a
-                      href={`http://localhost:5000${t.Attachment}`}
+                      href={`${baseURL}${t.Attachment}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ color: 'blue', textDecoration: 'underline' }}
@@ -271,11 +273,11 @@ formData.append('Purpose', editDialog.data.Purpose);
 formData.append('Host', editDialog.data.Host);
 formData.append('sof', editDialog.data.sof);
 formData.append('Area', editDialog.data.Area);
-formData.append('DatesFrom', editDialog.data.DatesFrom);
-formData.append('DatesTo', editDialog.data.DatesTo);
+formData.append('DatesFrom', editDialog.data.DatesFrom ? dayjs(editDialog.data.DatesFrom).format('YYYY-MM-DD') : '');
+formData.append('DatesTo', editDialog.data.DatesTo ? dayjs(editDialog.data.DatesTo).format('YYYY-MM-DD') : '');
 if (editFile) formData.append('attachment', editFile);
 
-        await axios.put(`http://localhost:5000/api/travels/${editDialog.data.id}`, formData, {
+        await axios.put(`${baseURL}/api/travels/${editDialog.data.id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
 

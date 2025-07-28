@@ -297,7 +297,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
                       >
                         {row.pdfPath ? (
                           <a
-                            href={`http://localhost:5000/${row.pdfPath}`}
+                            href={`${baseURL}/${row.pdfPath}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 500 }}

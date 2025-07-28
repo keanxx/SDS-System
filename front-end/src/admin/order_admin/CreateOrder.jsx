@@ -14,6 +14,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Autocomplete } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import dayjs from 'dayjs';
 
 const CreateOrder = () => {
   const [formData, setFormData] = useState({
@@ -28,11 +29,12 @@ const CreateOrder = () => {
   const [schools, setSchools] = useState([]);
   const [pdfFile, setPdfFile] = useState(null);
   const navigate = useNavigate();
+  const baseURL = import.meta.env.VITE_API_URL;
 
 useEffect(() => {
   const fetchDistricts = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/schools-w-district');
+      const response = await fetch(`${baseURL}/api/schools-w-district`);
       const data = await response.json();
 
       // Set schools with district information
@@ -103,7 +105,7 @@ const handleSchoolChange = (event, newValue) => {
     data.append('address', formData.address);
     data.append('position', formData.position);
     data.append('school', formData.school?.id || ''); // Send school name
-    data.append('date_signed', formData.date_signed ? formData.date_signed.toISOString().split('T')[0] : ''); // Format date_signed
+   data.append('date_signed', formData.date_signed ? dayjs(formData.date_signed).format('YYYY-MM-DD') : '');  // Format date_signed
     if (pdfFile) {
       data.append('pdf', pdfFile);
     } else {
@@ -111,7 +113,7 @@ const handleSchoolChange = (event, newValue) => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/orders', {
+      const response = await fetch(`${baseURL}/api/orders`, {
         method: 'POST',
         body: data,
       });

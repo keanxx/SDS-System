@@ -25,7 +25,7 @@ const OrderTable = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('name');
+  const [orderBy, setOrderBy] = useState('surname');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const baseURL = import.meta.env.VITE_API_URL;
@@ -79,11 +79,19 @@ const OrderTable = () => {
     setFilteredOrders(filtered);
   };
 
+  const extractSurname = (fullName) => {
+    const parts = fullName.split(' ');
+    return parts[parts.length - 1]; // Assume the surname is the last word
+  };
+
   const sortedOrders = filteredOrders.slice().sort((a, b) => {
+    const compareA = extractSurname(a.name).toLowerCase();
+    const compareB = extractSurname(b.name).toLowerCase();
+
     if (order === 'asc') {
-      return a[orderBy]?.toLowerCase() < b[orderBy]?.toLowerCase() ? -1 : 1;
+      return compareA < compareB ? -1 : 1;
     }
-    return a[orderBy]?.toLowerCase() > b[orderBy]?.toLowerCase() ? -1 : 1;
+    return compareA > compareB ? -1 : 1;
   });
 
   if (loading) {
@@ -104,7 +112,6 @@ const OrderTable = () => {
 
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-      
       <Box sx={{ padding: 2, display: 'flex', gap: 2 }}>
         <TextField
           fullWidth
@@ -135,21 +142,21 @@ const OrderTable = () => {
       </Box>
       <TableContainer sx={{ maxHeight: 550, overflowY: 'auto' }}>
         <Table stickyHeader>
-          <TableHead >
+          <TableHead>
             <TableRow>
               <TableCell>
                 <TableSortLabel
-                  sx={{fontWeight: 'bold'}}
-                  active={orderBy === 'name'}
-                  direction={orderBy === 'name' ? order : 'asc'}
-                  onClick={() => handleRequestSort('name')}
+                  sx={{ fontWeight: 'bold' }}
+                  active={orderBy === 'surname'}
+                  direction={orderBy === 'surname' ? order : 'asc'}
+                  onClick={() => handleRequestSort('surname')}
                 >
                   Name
                 </TableSortLabel>
               </TableCell>
               <TableCell>
                 <TableSortLabel
-                  sx={{fontWeight: 'bold'}}
+                  sx={{ fontWeight: 'bold' }}
                   active={orderBy === 'address'}
                   direction={orderBy === 'address' ? order : 'asc'}
                   onClick={() => handleRequestSort('address')}
@@ -159,7 +166,7 @@ const OrderTable = () => {
               </TableCell>
               <TableCell>
                 <TableSortLabel
-                  sx={{fontWeight: 'bold'}}
+                  sx={{ fontWeight: 'bold' }}
                   active={orderBy === 'position'}
                   direction={orderBy === 'position' ? order : 'asc'}
                   onClick={() => handleRequestSort('position')}
@@ -169,7 +176,7 @@ const OrderTable = () => {
               </TableCell>
               <TableCell>
                 <TableSortLabel
-                  sx={{fontWeight: 'bold'}}
+                  sx={{ fontWeight: 'bold' }}
                   active={orderBy === 'school_name'}
                   direction={orderBy === 'school_name' ? order : 'asc'}
                   onClick={() => handleRequestSort('school_name')}
@@ -179,7 +186,7 @@ const OrderTable = () => {
               </TableCell>
               <TableCell>
                 <TableSortLabel
-                    sx={{fontWeight: 'bold'}}
+                  sx={{ fontWeight: 'bold' }}
                   active={orderBy === 'district_name'}
                   direction={orderBy === 'district_name' ? order : 'asc'}
                   onClick={() => handleRequestSort('district_name')}
@@ -187,10 +194,7 @@ const OrderTable = () => {
                   District
                 </TableSortLabel>
               </TableCell>
-    
-              <TableCell
-              sx={{fontWeight: 'bold'}}
-              >Date Signed</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Date Signed</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -214,7 +218,6 @@ const OrderTable = () => {
                 <TableCell>{order.position}</TableCell>
                 <TableCell>{order.school_name}</TableCell>
                 <TableCell>{order.district_name}</TableCell>
-               
                 <TableCell>
                   {order.date_signed
                     ? new Date(order.date_signed).toLocaleDateString('en-US', {

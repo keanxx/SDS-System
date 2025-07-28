@@ -14,7 +14,9 @@ import {
   DialogContent,
   DialogActions,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete'; // Import Delete Icon
 import dayjs from 'dayjs';
 import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
@@ -35,6 +37,10 @@ const TravelInput = () => {
   const [file, setFile] = useState(null);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false); // State for success modal
   const baseURL = import.meta.env.VITE_API_URL;
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -105,9 +111,23 @@ const TravelInput = () => {
   };
 
   return (
-    <div className="bg-white/50 backdrop-blur-md border-gray-500/30 border rounded-lg p-10 space-y-5 w-full max-w-[1100px]">
-      <h1 className="text-lg font-bold">Travel Authority Details</h1>
-      <div className="flex flex-col space-y-5">
+    <div
+      className="bg-white/50 backdrop-blur-md border-gray-500/30 border rounded-lg p-5 space-y-5 w-full max-w-[1100px]"
+      style={{
+        padding: isMobile ? '16px' : '40px',
+      }}
+    >
+      <h1 className="text-lg font-bold" style={{ fontSize: isMobile ? '1.25rem' : '1.5rem' }}>
+        Travel Authority Details
+      </h1>
+      <div
+        className="flex flex-col space-y-5"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+        }}
+      >
         {/* Autocomplete Component */}
         <Autocomplete
           disablePortal
@@ -128,7 +148,7 @@ const TravelInput = () => {
               setAutocompleteValue(null);
             }
           }}
-          sx={{ width: 223 }}
+          sx={{ width: isMobile ? '100%' : 223 }}
           renderInput={(params) => (
             <TextField {...params} label="Initial/Code" variant="outlined" />
           )}
@@ -136,7 +156,15 @@ const TravelInput = () => {
 
         {/* Traveler(s) Section */}
         {travelers.map((traveler, index) => (
-          <div key={index} className="flex space-x-5 items-center">
+          <div
+            key={index}
+            className="flex space-x-5 items-center"
+            style={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: '10px',
+            }}
+          >
             <TextField
               fullWidth
               variant="outlined"
@@ -186,13 +214,19 @@ const TravelInput = () => {
             setTravelers([...travelers, { name: '', position: '', station: '', initial: '' }]);
             setAutocompleteValue(null);
           }}
-          sx={{ width: 'fit-content' }}
+          sx={{ width: isMobile ? '100%' : 'fit-content' }}
         >
           + Add Traveler
         </Button>
 
         {/* Purpose of Travel */}
-        <div className="flex space-x-5 w-full">
+        <div
+          className="flex space-x-5 w-full"
+          style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+          }}
+        >
           <TextField
             id="purpose"
             label="Purpose of Travel"
@@ -204,19 +238,31 @@ const TravelInput = () => {
         </div>
 
         {/* Host & Dates */}
-        <div className="flex space-x-5 w-full items-center justify-evenly">
+        <div
+          className="flex space-x-5 w-full items-center justify-evenly"
+          style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '20px' : '10px',
+          }}
+        >
           <TextField
             id="host"
             fullWidth
             variant="outlined"
             label="Host of Activity"
-            sx={{ marginTop: 1, maxWidth: 280 }}
+            sx={{ marginTop: isMobile ? 1 : 0, maxWidth: 280 }}
           />
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DemoContainer
               components={['DatePicker', 'DatePicker']}
-              sx={{ display: 'flex', width: '100%' }}
+              sx={{
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '20px' : '10px',
+                width: '100%',
+              }}
             >
               <DatePicker
                 label="Inclusive Date"
@@ -224,7 +270,7 @@ const TravelInput = () => {
                 onChange={(newValue) => setInclusiveDate(newValue)}
                 slotProps={{
                   textField: {
-                    sx: { width: 223 },
+                    sx: { width: isMobile ? '100%' : 223 },
                   },
                 }}
               />
@@ -234,7 +280,7 @@ const TravelInput = () => {
                 onChange={(newValue) => setExclusiveDate(newValue)}
                 slotProps={{
                   textField: {
-                    sx: { width: 223 },
+                    sx: { width: isMobile ? '100%' : 223 },
                   },
                 }}
               />
@@ -243,7 +289,13 @@ const TravelInput = () => {
         </div>
 
         {/* Destination */}
-        <div className="flex space-x-5">
+        <div
+          className="flex space-x-5"
+          style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+          }}
+        >
           <TextField
             id="destination"
             fullWidth
@@ -254,7 +306,14 @@ const TravelInput = () => {
         </div>
 
         {/* Source of Fund, Area Dropdown, Done Button */}
-        <div className="flex space-x-5">
+        <div
+          className="flex space-x-5"
+          style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '20px' : '10px',
+          }}
+        >
           <TextField
             id="sof"
             required
@@ -262,9 +321,9 @@ const TravelInput = () => {
             multiline
             variant="outlined"
             label="Source of Fund"
-            sx={{ width: 350 }}
+            sx={{ width: isMobile ? '100%' : 350 }}
           />
-          <Box sx={{ minWidth: 120 }}>
+          <Box sx={{ minWidth: 120, width: isMobile ? '100%' : 'auto' }}>
             <FormControl fullWidth>
               <InputLabel id="area-select-label">Area</InputLabel>
               <Select
@@ -284,7 +343,7 @@ const TravelInput = () => {
           <Button
             variant="outlined"
             component="label"
-            sx={{ width: 223 }}
+            sx={{ width: isMobile ? '100%' : 223 }}
           >
             Upload PDF
             <input
@@ -298,7 +357,7 @@ const TravelInput = () => {
           <Button
             variant="contained"
             sx={{
-              width: 223,
+              width: isMobile ? '100%' : 223,
             }}
             onClick={handleSubmit}
           >

@@ -106,21 +106,24 @@ const LineGraph = () => {
   }, [fetchGraphData]);
 
   const getChartData = () => {
-    if (!graphData?.datasets) {
-      return {
-        labels: [],
-        datasets: [
-          {
-            label: `Travels (${timeRange})`,
-            data: [],
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-            tension: 0.3,
-            fill: true,
-          },
-        ],
-      };
-    }
+  if (!graphData?.datasets || graphData.datasets.length === 0) {
+    return {
+      labels: ['No Data'],
+      datasets: [
+        {
+          label: `Travels (${timeRange})`,
+          data: [0],
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.2)',
+          tension: 0.3,
+          fill: true,
+        },
+      ],
+    };
+  }
+
+  // Process labels and datasets as per the time range
+
 
     let labels = graphData.labels;
     let datasets = graphData.datasets;

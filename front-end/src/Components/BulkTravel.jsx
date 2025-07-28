@@ -15,6 +15,7 @@ export default function BulkTravel() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
+  const baseURL = import.meta.env.VITE_API_URL;
 
   const formatDate = v => {
     if (!v) return '';
@@ -62,7 +63,7 @@ export default function BulkTravel() {
     setMsg(null);
     try {
       const res = await axios.post(
-        'http://localhost:5000/api/travels/bulk-insert',
+        `${baseURL}/api/travels/bulk-insert`,
         data, // <-- this should be an array of objects
         { headers: { 'Content-Type': 'application/json' } }
       );
