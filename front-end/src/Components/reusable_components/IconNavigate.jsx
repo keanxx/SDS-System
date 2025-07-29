@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const IconNavigate = ({ icon, text, to, color = 'black' }) => {
+const IconNavigate = ({ icon, text, to, color }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -20,7 +20,7 @@ const IconNavigate = ({ icon, text, to, color = 'black' }) => {
         border: '1px solid rgba(255, 255, 255, 0.3)', // Transparent border
       }}
     >
-      <div className={`text-${color}-500 text-2xl`}>{icon}</div>
+      <div className={`${color} text-2xl`}>{icon}</div>
       <span className={`font-bold text-lg text-500`}>{text}</span>
     </div>
   );

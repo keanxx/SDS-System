@@ -20,7 +20,7 @@ const OrderDashboard = () => {
         sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, backgroundColor: '#1e293b' }}>
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
-           Order List
+           Notice List
           </Typography>
           <Button color="inherit" onClick={() => navigate('/')}>Dashboard</Button>
           

@@ -9,8 +9,8 @@ const XLSX = require('xlsx');
 // Multer setup for PDF uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const dir = path.join(__dirname, '..', 'uploads');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    const dir = path.join(__dirname, '..', 'uploads/appointments'); // <-- updated
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });   // <-- ensure parent dirs
     cb(null, dir);
   },
   filename: function (req, file, cb) {
@@ -127,7 +127,7 @@ router.post('/appointment', upload.single('pdf'), (req, res) => {
     remarks // Include remarks in the request body
   } = req.body;
 
-  const pdfPath = req.file ? `uploads/${req.file.filename}` : null;
+  const pdfPath = req.file ? `uploads/appointments/${req.file.filename}` : null;
 
   const sql = `
     INSERT INTO \`appointment_details\` 
@@ -170,7 +170,7 @@ router.put('/appointment/:id', upload.single('pdf'), (req, res) => {
   const formattedDateSigned = new Date(dateSigned).toISOString().slice(0, 19).replace('T', ' ');
 
   // Handle PDF upload path
-  const pdfPath = req.file ? `uploads/${req.file.filename}` : null;
+  const pdfPath = req.file ? `uploads/appointments/${req.file.filename}` : null;
 
   // Log incoming data for debugging
   console.log('Incoming data:', {

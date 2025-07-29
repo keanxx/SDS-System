@@ -8,7 +8,7 @@ const drawerWidth = 240;
 const navItems = [
   { text: 'Travels', icon: <ModeOfTravel />, to: '/createTravel' },
   { text: 'Appointments', icon: <Groups />, to: '/editAppointment' },
-  { text: 'Orders', icon: <BookmarkBorder />, to: '/editOrder' },
+  { text: 'Notice', icon: <BookmarkBorder />, to: '/editOrder' },
 
 ];
 

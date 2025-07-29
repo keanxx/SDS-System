@@ -53,10 +53,10 @@ const App = () => {
             <Route path="/createOrder" element={<CreateOrder />} />
           </Routes>
         </main>
-        <Footer />
+        <Footer className="fixed bottom-0 left-0 right-0" />
       </div>
     </Router>
   );
-};
+};  
 
 export default App;

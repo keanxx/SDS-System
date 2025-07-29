@@ -22,7 +22,7 @@ const CreateOrder = () => {
     address: '',
     position: '',
     district: '',
-    schoolOffice: '',
+    school: '',
     dateSigned: null,
   });
   const [districts, setDistricts] = useState([]);
@@ -122,6 +122,16 @@ const handleSchoolChange = (event, newValue) => {
         const result = await response.json();
         console.log(result);
         alert('Order created successfully!');
+        // Reset form fields
+        setFormData({
+          name: '',
+          address: '',
+          position: '',
+          district: '',
+          school: '',
+          date_signed: null,
+        });
+        setPdfFile(null);
       } else {
         console.error('Failed to create order');
         alert('Failed to create order. Please try again.');
@@ -138,11 +148,11 @@ const handleSchoolChange = (event, newValue) => {
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Admin - Create Order
+            Admin - Create Notice
           </Typography>
           <Button color="inherit" onClick={() => navigate('/admin')}>Dashboard</Button>
-          <Button color="inherit" onClick={() => navigate('/editOrder')}>Orders</Button>
-          <Button color="inherit" onClick={() => navigate('/createOrder')}>Create Order</Button>
+          <Button color="inherit" onClick={() => navigate('/editOrder')}>Notices</Button>
+          <Button color="inherit" onClick={() => navigate('/createOrder')}>Create Notice</Button>
         </Toolbar>
       </AppBar>
 
@@ -150,7 +160,7 @@ const handleSchoolChange = (event, newValue) => {
       <Box sx={{ maxWidth: 830, margin: 'auto', padding: 4, display: 'flex', justifyContent: 'space-between' }}>
         <Paper elevation={3} sx={{ padding: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Create Order
+            Create Notice
           </Typography>
           <form onSubmit={handleSubmit}>
             <Grid container spacing={2}>

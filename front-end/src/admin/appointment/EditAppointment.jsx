@@ -10,17 +10,15 @@ import {
 import { Edit, Delete } from '@mui/icons-material';
 import axios from 'axios';
 
-
-
 const EditAppointment = () => {
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
+  const [confirmationDialog, setConfirmationDialog] = useState({ open: false, message: '', success: false });
   const navigate = useNavigate();
-  const baseURL = import.meta.env.VITE_API_URL ;
-
+  const baseURL = import.meta.env.VITE_API_URL;
 
   const fetchAppointments = async () => {
     const res = await axios.get(`${baseURL}/api/appointments`);
@@ -55,50 +53,55 @@ const EditAppointment = () => {
   };
 
   const handleUpdate = async () => {
-  const formData = new FormData();
+    const formData = new FormData();
 
-  // Map front-end fields to back-end fields
-  const fieldMap = {
-    Name: 'name',
-    PositionTitle: 'positionTitle',
-    SchoolOffice: 'schoolOffice',
-    District: 'district',
-    StatusOfAppointment: 'statusOfAppointment',
-    NatureAppointment: 'natureAppointment',
-    ItemNo: 'itemNo',
-    DateSigned: 'dateSigned',
-    Remarks: 'remarks', // Added mapping for remarks
+    // Map front-end fields to back-end fields
+    const fieldMap = {
+      Name: 'name',
+      PositionTitle: 'positionTitle',
+      SchoolOffice: 'schoolOffice',
+      District: 'district',
+      StatusOfAppointment: 'statusOfAppointment',
+      NatureAppointment: 'natureAppointment',
+      ItemNo: 'itemNo',
+      DateSigned: 'dateSigned',
+      Remarks: 'remarks',
+    };
+
+    // Append fields to formData
+    for (let key in fieldMap) {
+      const frontendValue = editing[key];
+      formData.append(fieldMap[key], frontendValue || '');
+    }
+
+    // Attach PDF if replaced
+    if (editing.pdf) {
+      formData.append('pdf', editing.pdf); // attach if replaced
+    }
+
+    try {
+      // Send update request to the backend
+      const response = await axios.put(`${baseURL}/api/appointment/${editing.id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      console.log('Update successful:', response.data); // Log success response
+      setConfirmationDialog({ open: true, message: 'Update successful!', success: true });
+      setOpen(false); // Close modal/dialog
+      fetchAppointments(); // Refresh appointments list
+    } catch (err) {
+      console.error('Update failed:', err); // Log error
+      setConfirmationDialog({ open: true, message: 'Update failed. Please check the data and try again.', success: false });
+    }
   };
-
-  // Append fields to formData
-  for (let key in fieldMap) {
-    const frontendValue = editing[key];
-    formData.append(fieldMap[key], frontendValue || '');
-  }
-
-  // Attach PDF if replaced
-  if (editing.pdf) {
-    formData.append('pdf', editing.pdf); // attach if replaced
-  }
-
-  try {
-    // Send update request to the backend
-    const response = await axios.put(`${baseURL}/api/appointment/${editing.id}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-
-    console.log('Update successful:', response.data); // Log success response
-    setOpen(false); // Close modal/dialog
-    fetchAppointments(); // Refresh appointments list
-  } catch (err) {
-    console.error('Update failed:', err); // Log error
-    alert('Update failed. Please check the data and try again.'); // Show alert
-  }
-};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setEditing((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationDialog({ open: false, message: '', success: false });
   };
 
   return (
@@ -127,13 +130,12 @@ const EditAppointment = () => {
           label="Search by Name"
           value={searchTerm}
           onChange={handleSearch}
-          sx={{ width: '70%', maxWidth: 1200}}
+          sx={{ width: '70%', maxWidth: 1200 }}
         />
 
         {/* Table Container centered */}
-      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-  <TableContainer component={Paper} sx={{ maxHeight: 500, width: '100%', maxWidth: 1800 }}>
-
+        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <TableContainer component={Paper} sx={{ maxHeight: 500, width: '100%', maxWidth: 1800 }}>
             <Table>
               <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableRow>
@@ -169,8 +171,7 @@ const EditAppointment = () => {
                     <TableCell>
                       {row.pdfPath ? (
                         <a
-                        
-                            href={`${baseURL}/${row.pdfPath}`}
+                          href={`${baseURL}/${row.pdfPath}`}
                           target="_blank"
                           rel="noreferrer"
                         >
@@ -293,6 +294,22 @@ const EditAppointment = () => {
             <Button variant="contained" onClick={handleUpdate}>
               Save
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Confirmation Dialog */}
+        <Dialog
+          open={confirmationDialog.open}
+          onClose={handleConfirmationClose}
+        >
+          <DialogTitle>
+            {confirmationDialog.success ? 'Success' : 'Error'}
+          </DialogTitle>
+          <DialogContent>
+            <Typography>{confirmationDialog.message}</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleConfirmationClose}>Close</Button>
           </DialogActions>
         </Dialog>
       </Box>

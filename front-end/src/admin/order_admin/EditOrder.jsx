@@ -130,17 +130,17 @@ const EditOrder = () => {
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Admin Orders
+            Admin Notice
           </Typography>
           <Button color="inherit" onClick={() => navigate('/admin')}>Dashboard</Button>
-          <Button color="inherit" onClick={() => navigate('/editOrder')}>Orders</Button>
-          <Button color="inherit" onClick={() => navigate('/createOrder')}>Add Orders</Button>
+          <Button color="inherit" onClick={() => navigate('/editOrder')}>Notices</Button>
+          <Button color="inherit" onClick={() => navigate('/createOrder')}>Add Notice</Button>
         </Toolbar>
       </AppBar>
 
       <Box sx={{ maxWidth: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: 2 }}>
         <Typography variant="h5" gutterBottom>
-          Order Management
+          Notice Management
         </Typography>
 
         {/* Search Box */}
@@ -212,7 +212,7 @@ const EditOrder = () => {
 
         {/* Edit Dialog */}
         <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-          <DialogTitle>Edit Order</DialogTitle>
+          <DialogTitle>Edit Notice</DialogTitle>
           <DialogContent>
             {['name', 'address', 'position'].map((field) => (
               <TextField

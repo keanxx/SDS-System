@@ -29,19 +29,19 @@ const MainDashboard = () => {
             icon={<ModeOfTravel />}
             text="Travels"
             to="/travelsDashboard"
-            color="blue"
+            color='text-sky-500'
           />
           <IconNavigate
             icon={<Groups />}
             text="Appointments"
             to="/appointmentDetails"
-            color="black"
+            color='text-green-500'
           />
            <IconNavigate
             icon={<BookmarkBorder />}
-            text="Orders"
+            text="Notice"
             to="/orderDashboard"
-            color="green"
+            color='text-amber-600'
           />
         </div>
       </div>
