@@ -338,10 +338,17 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
                         {row.ItemNo?.replace(' ', '\n')}
                       </TableCell>
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        {row.DateSigned && !isNaN(new Date(row.DateSigned))
-                          ? new Date(row.DateSigned).toLocaleDateString('en-CA')
-                          : ''}
-                      </TableCell>
+  {row.DateSigned && !isNaN(new Date(row.DateSigned))
+    ? (() => {
+        const date = new Date(row.DateSigned);
+        const month = date.toLocaleString('en-US', { month: 'short' }); // e.g. "Jul"
+        const day = String(date.getDate()).padStart(2, '0');             // e.g. "30"
+        const year = date.getFullYear();                                 // e.g. "2025"
+        return `${month}-${day}-${year}`;
+      })()
+    : ''}
+</TableCell>
+
                       <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
                         {row.releasedAt ? (
                           <Button

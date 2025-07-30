@@ -166,7 +166,7 @@ const EditOrder = () => {
                   <TableCell>District</TableCell>
                   <TableCell>Date Signed</TableCell>
                   <TableCell>PDF</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{ display: 'flex', alignContent: 'start' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
 
@@ -178,7 +178,17 @@ const EditOrder = () => {
                     <TableCell>{row.position}</TableCell>
                     <TableCell>{row.school_name}</TableCell>
                     <TableCell>{row.district_name}</TableCell>
-                    <TableCell>{row.date_signed}</TableCell>
+                   <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                        {row.date_signed && !isNaN(new Date(row.date_signed))
+                                          ? (() => {
+                                              const date = new Date(row.date_signed);
+                                              const month = date.toLocaleString('en-US', { month: 'short' }); // e.g. "Jul"
+                                              const day = String(date.getDate()).padStart(2, '0');             // e.g. "30"
+                                              const year = date.getFullYear();                                 // e.g. "2025"
+                                              return `${month}-${day}-${year}`;
+                                            })()
+                                          : ''}
+                                      </TableCell>
                     <TableCell sx={{color: row.pdf_path ? 'blue' : 'red'}}>
                       {row.pdf_path ? (
                         <a
@@ -192,7 +202,7 @@ const EditOrder = () => {
                         'No PDF Available'
                       )}
                     </TableCell>
-                    <TableCell sx={{ display: 'flex' }}>
+                    <TableCell sx={{ display: 'flex', alignContent: 'start' }}>
                       <IconButton onClick={() => handleEditClick(row)}>
                         <Edit />
                       </IconButton>

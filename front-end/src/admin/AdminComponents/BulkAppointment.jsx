@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
+import dayjs from 'dayjs';
 
 const BulkAppointmentUpload = () => {
   const fileInputRef = useRef();
@@ -23,16 +24,18 @@ const BulkAppointmentUpload = () => {
   const [loading, setLoading] = useState(false);
   const baseURL = import.meta.env.VITE_API_URL;
 
-  const formatDate = (value) => {
-    if (!value) return null;
-    if (typeof value === 'number') {
-      const parsed = XLSX.SSF.parse_date_code(value);
-      if (!parsed) return null;
-      return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
-    }
-    const date = new Date(value);
-    return isNaN(date) ? null : date.toISOString().split('T')[0];
-  };
+ const formatDate = (value) => {
+  if (!value) return null;
+
+  if (typeof value === 'number') {
+    const parsed = XLSX.SSF.parse_date_code(value);
+    if (!parsed) return null;
+    return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
+  }
+
+  const date = dayjs(value);
+  return date.isValid() ? date.format('YYYY-MM-DD') : null;
+};
 
   const validateColumns = (rows) => {
     const requiredColumns = [

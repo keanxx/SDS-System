@@ -15,6 +15,7 @@ import {
   DialogActions,
   Typography,
   useMediaQuery,
+  Grid
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete'; // Import Delete Icon
@@ -35,7 +36,8 @@ const TravelInput = () => {
   const [employees, setEmployees] = useState([]);
   const [autocompleteValue, setAutocompleteValue] = useState(null);
   const [file, setFile] = useState(null);
-  const [successDialogOpen, setSuccessDialogOpen] = useState(false); // State for success modal
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false); 
+  const [sourceOfFund, setSourceOfFund] = useState("Local Fund");
   const baseURL = import.meta.env.VITE_API_URL;
 
   const theme = useTheme();
@@ -315,14 +317,16 @@ const TravelInput = () => {
           }}
         >
           <TextField
-            id="sof"
-            required
-            fullWidth
-            multiline
-            variant="outlined"
-            label="Source of Fund"
-            sx={{ width: isMobile ? '100%' : 350 }}
-          />
+  id="sof"
+  required
+  fullWidth
+  multiline
+  variant="outlined"
+  label="Source of Fund"
+  value={sourceOfFund}
+  onChange={(e) => setSourceOfFund(e.target.value)}
+  sx={{ width: isMobile ? '100%' : 350 }}
+/>
           <Box sx={{ minWidth: 120, width: isMobile ? '100%' : 'auto' }}>
             <FormControl fullWidth>
               <InputLabel id="area-select-label">Area</InputLabel>
@@ -340,11 +344,12 @@ const TravelInput = () => {
               </Select>
             </FormControl>
           </Box>
-          <Button
-            variant="outlined"
-            component="label"
-            sx={{ width: isMobile ? '100%' : 223 }}
-          >
+          <Grid item xs={12} sm={6}>
+            <Button
+              variant="outlined"
+              component="label"
+              sx={{ width: isMobile ? '100%' : 223 }}
+            >
             Upload PDF
             <input
               type="file"
@@ -354,15 +359,35 @@ const TravelInput = () => {
             />
           </Button>
 
-          <Button
-            variant="contained"
-            sx={{
-              width: isMobile ? '100%' : 223,
-            }}
-            onClick={handleSubmit}
-          >
-            Done
-          </Button>
+            {file && (
+  <Typography
+    variant="body2"
+    sx={{
+      mt: 1,
+      fontStyle: 'italic',
+      color: 'gray',
+      whiteSpace: 'nowrap', // Prevent text from wrapping
+      overflow: 'hidden', // Hide overflowed text
+      textOverflow: 'ellipsis', // Add ellipsis for overflowed text
+      maxWidth: '200px', // Set a maximum width for the text
+    }}
+  >
+    Selected file: {file.name}
+  </Typography>
+)}
+          </Grid>
+         
+
+         <Button
+  variant="contained"
+  sx={{
+    width: isMobile ? '100%' : 223,
+    height: 48, 
+  }}
+  onClick={handleSubmit}
+>
+  Done
+</Button>
         </div>
       </div>
 

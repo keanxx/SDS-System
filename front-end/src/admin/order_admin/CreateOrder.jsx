@@ -257,15 +257,22 @@ const handleSchoolChange = (event, newValue) => {
 
               {/* Upload PDF Field */}
               <Grid item xs={12} sm={6}>
-                <Button variant="outlined" component="label" fullWidth>
+                <Button variant="outlined" component="label">
                   Upload PDF
                   <input
                     type="file"
+                    name='pdf'
                     accept="application/pdf"
                     hidden
                     onChange={(e) => setPdfFile(e.target.files[0])}
                   />
                 </Button>
+
+                {pdfFile && (
+    <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic', color: 'gray' }}>
+      Selected file: {pdfFile.name}
+    </Typography>
+  )}
               </Grid>
             </Grid>
 

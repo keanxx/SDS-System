@@ -162,12 +162,17 @@ const EditAppointment = () => {
                     <TableCell>{row.StatusOfAppointment}</TableCell>
                     <TableCell>{row.NatureAppointment}</TableCell>
                     <TableCell>{row.ItemNo}</TableCell>
-                    <TableCell>
-                      {row.DateSigned &&
-                      !isNaN(new Date(row.DateSigned).getTime())
-                        ? new Date(row.DateSigned).toLocaleDateString('en-CA')
-                        : ''}
-                    </TableCell>
+                   <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                     {row.DateSigned && !isNaN(new Date(row.DateSigned))
+                       ? (() => {
+                           const date = new Date(row.DateSigned);
+                           const month = date.toLocaleString('en-US', { month: 'short' }); // e.g. "Jul"
+                           const day = String(date.getDate()).padStart(2, '0');             // e.g. "30"
+                           const year = date.getFullYear();                                 // e.g. "2025"
+                           return `${month}-${day}-${year}`;
+                         })()
+                       : ''}
+                   </TableCell>
                     <TableCell>
                       {row.pdfPath ? (
                         <a
