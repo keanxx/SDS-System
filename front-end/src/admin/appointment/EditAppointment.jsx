@@ -40,10 +40,16 @@ const EditAppointment = () => {
     );
   };
 
-  const handleEditClick = (row) => {
-    setEditing({ ...row });
-    setOpen(true);
-  };
+
+const handleEditClick = (row) => {
+  setEditing({
+    ...row,
+    DateSigned: row.DateSigned
+      ? new Date(row.DateSigned).toLocaleDateString('en-CA') // Format as YYYY-MM-DD in local time
+      : '',
+  });
+  setOpen(true);
+};
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this record?')) {
