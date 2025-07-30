@@ -58,10 +58,15 @@ const EditOrder = () => {
     );
   };
 
-  const handleEditClick = (row) => {
-    setEditing({ ...row });
-    setOpen(true);
-  };
+ const handleEditClick = (row) => {
+  setEditing({
+    ...row,
+    date_signed: row.date_signed
+      ? new Date(row.date_signed).toLocaleDateString('en-CA') // Format as YYYY-MM-DD in local time
+      : '',
+  });
+  setOpen(true);
+};
 
   const handleDelete = async (idorder) => {
     if (window.confirm('Are you sure you want to delete this record?')) {
@@ -254,15 +259,19 @@ const EditOrder = () => {
             </FormControl>
 
             <TextField
-              margin="dense"
-              name="date_signed"
-              label="Date Signed"
-              type="date"
-              fullWidth
-              value={editing?.date_signed ? editing.date_signed.slice(0, 10) : ''}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-            />
+  margin="dense"
+  name="date_signed"
+  label="Date Signed"
+  type="date"
+  fullWidth
+  value={
+    editing?.date_signed && !isNaN(new Date(editing.date_signed))
+      ? new Date(editing.date_signed).toISOString().slice(0, 10)
+      : ''
+  }
+  onChange={handleChange}
+  InputLabelProps={{ shrink: true }}
+/>
 
             {/* PDF Upload */}
             <Button variant="outlined" component="label" sx={{ mt: 2 }}>

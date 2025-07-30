@@ -158,54 +158,56 @@ const handleEditClick = (row) => {
                 </TableRow>
               </TableHead>
 
-              <TableBody>
-                {filteredAppointments.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>{row.Name}</TableCell>
-                    <TableCell>{row.PositionTitle}</TableCell>
-                    <TableCell>{row.SchoolOffice}</TableCell>
-                    <TableCell>{row.District}</TableCell>
-                    <TableCell>{row.StatusOfAppointment}</TableCell>
-                    <TableCell>{row.NatureAppointment}</TableCell>
-                    <TableCell>{row.ItemNo}</TableCell>
-                   <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                     {row.DateSigned && !isNaN(new Date(row.DateSigned))
-                       ? (() => {
-                           const date = new Date(row.DateSigned);
-                           const month = date.toLocaleString('en-US', { month: 'short' }); // e.g. "Jul"
-                           const day = String(date.getDate()).padStart(2, '0');             // e.g. "30"
-                           const year = date.getFullYear();                                 // e.g. "2025"
-                           return `${month}-${day}-${year}`;
-                         })()
-                       : ''}
-                   </TableCell>
-                    <TableCell>
-                      {row.pdfPath ? (
-                        <a
-                          href={`${baseURL}/${row.pdfPath}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          View
-                        </a>
-                      ) : (
-                        'No PDF Available'
-                      )}
-                    </TableCell>
-                    <TableCell sx={{ display: 'flex' }}>
-                      <IconButton onClick={() => handleEditClick(row)}>
-                        <Edit />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleDelete(row.id)}
-                        color="error"
-                      >
-                        <Delete />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
+             <TableBody>
+  {filteredAppointments
+    .sort((a, b) => new Date(b.DateSigned) - new Date(a.DateSigned)) // Sort by DateSigned in descending order
+    .map((row) => (
+      <TableRow key={row.id}>
+        <TableCell>{row.Name}</TableCell>
+        <TableCell>{row.PositionTitle}</TableCell>
+        <TableCell>{row.SchoolOffice}</TableCell>
+        <TableCell>{row.District}</TableCell>
+        <TableCell>{row.StatusOfAppointment}</TableCell>
+        <TableCell>{row.NatureAppointment}</TableCell>
+        <TableCell>{row.ItemNo}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          {row.DateSigned && !isNaN(new Date(row.DateSigned))
+            ? (() => {
+                const date = new Date(row.DateSigned);
+                const month = date.toLocaleString('en-US', { month: 'short' }); // e.g., "Jul"
+                const day = String(date.getDate()).padStart(2, '0');             // e.g., "30"
+                const year = date.getFullYear();                                 // e.g., "2025"
+                return `${month}-${day}-${year}`;
+              })()
+            : ''}
+        </TableCell>
+        <TableCell>
+          {row.pdfPath ? (
+            <a
+              href={`${baseURL}/${row.pdfPath}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View
+            </a>
+          ) : (
+            'No PDF Available'
+          )}
+        </TableCell>
+        <TableCell sx={{ display: 'flex', alignContent: 'start' }}>
+          <IconButton onClick={() => handleEditClick(row)}>
+            <Edit />
+          </IconButton>
+          <IconButton
+            onClick={() => handleDelete(row.id)}
+            color="error"
+          >
+            <Delete />
+          </IconButton>
+        </TableCell>
+      </TableRow>
+    ))}
+</TableBody>
             </Table>
           </TableContainer>
         </Box>
