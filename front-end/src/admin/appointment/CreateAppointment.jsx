@@ -289,13 +289,15 @@ const handleSubmit = async (e) => {
                   value={formData.natureAppointment}
                   onChange={handleChange}
                 >
-                  <MenuItem value="DEMOTION">DEMOTION</MenuItem>
+                 
                   <MenuItem value="ORIGINAL">ORIGINAL</MenuItem>
-                  <MenuItem value="PROMOTIONAL">PROMOTIONAL</MenuItem>
-                  <MenuItem value="REAPPOINTMENT">REAPPOINTMENT</MenuItem>
+                  <MenuItem value="PROMOTIONAL">PROMOTION</MenuItem>
                   <MenuItem value="RECLASSIFICATION">RECLASSIFICATION</MenuItem>
-                  <MenuItem value="RE-EMPLOYMENT">RE-EMPLOYMENT</MenuItem>
+                  <MenuItem value="REAPPOINTMENT">REAPPOINTMENT</MenuItem>
+                  
+                  <MenuItem value="REEMPLOYMENT">REEMPLOYMENT</MenuItem>
                   <MenuItem value="TRANSFER">TRANSFER</MenuItem>
+                   <MenuItem value="DEMOTION">DEMOTION</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
