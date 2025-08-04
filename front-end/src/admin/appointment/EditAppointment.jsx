@@ -9,6 +9,19 @@ import {
 } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
 import axios from 'axios';
+import Swal from 'sweetalert2';
+
+const showSwal = (options) => {
+  Swal.fire({
+    ...options,
+    didOpen: () => {
+      const swalContainer = document.querySelector('.swal2-container');
+      if (swalContainer) {
+        swalContainer.style.zIndex = '2000'; // Ensure Swal is above MUI Dialog
+      }
+    },
+  });
+};
 
 const EditAppointment = () => {
   const [appointments, setAppointments] = useState([]);
@@ -19,82 +32,54 @@ const EditAppointment = () => {
   const [confirmationDialog, setConfirmationDialog] = useState({ open: false, message: '', success: false });
   const navigate = useNavigate();
   const baseURL = import.meta.env.VITE_API_URL;
-  
+
   const fileInputRef = useRef(null);
-  
+
   const fetchAppointments = async () => {
-    const res = await axios.get(`${baseURL}/api/appointments`);
-    setAppointments(res.data);
-    setFilteredAppointments(res.data); // Initialize filtered appointments
+    try {
+      const res = await axios.get(`${baseURL}/api/appointments`);
+      setAppointments(res.data);
+      setFilteredAppointments(res.data); // Initialize filtered appointments
+    } catch (error) {
+      showSwal({
+        icon: 'error',
+        title: 'Error',
+        text: `Failed to fetch appointments: ${error.message}`,
+      });
+    }
   };
 
   useEffect(() => {
     fetchAppointments();
   }, []);
 
-    useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.altKey && e.key === 'u') { // Detect Alt+U
-        e.preventDefault();
-        if (fileInputRef.current) {
-          fileInputRef.current.click(); // Trigger file input click
-        }
-      }
-    };
-     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-  
-  useEffect(() => {
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && open) { // Check if Enter is pressed and dialog is open
-      e.preventDefault();
-      handleUpdate(); // Trigger the save action
-    }
-  };
-
-  window.addEventListener('keydown', handleKeyDown);
-  return () => {
-    window.removeEventListener('keydown', handleKeyDown);
-  };
-}, [open, editing]); // Dependencies include `open` and `editing`
-
-  const handleSearch = (e) => {
-    const term = e.target.value.toLowerCase();
-    setSearchTerm(term);
-    setFilteredAppointments(
-      appointments.filter((appointment) =>
-        appointment.Name.toLowerCase().includes(term)
-      )
-    );
-  };
-
-  const formatToLocalDateTime = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr); // Parse date string
-    const tzOffset = date.getTimezoneOffset() * 60000; // Offset in milliseconds
-    const localDate = new Date(date.getTime() - tzOffset); // Adjust to local time
-    return localDate.toISOString().slice(0, 16); // Format as YYYY-MM-DDTHH:mm
-  };
-
-  const handleEditClick = (row) => {
-    setEditing({
-      ...row,
-      DateSigned: row.DateSigned
-        ? new Date(row.DateSigned).toISOString().slice(0, 10) // Format as YYYY-MM-DD
-        : '',
-      releasedAt: formatToLocalDateTime(row.releasedAt), // Convert to local time for datetime-local input
-      remarks: row.remarks || '', // Ensure remarks is included with a default value
-    });
-    setOpen(true);
-  };
-
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this record?')) {
-      await axios.delete(`${baseURL}/api/appointment/${id}`);
-      fetchAppointments();
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'You won’t be able to revert this!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`${baseURL}/api/appointment/${id}`);
+        showSwal({
+          icon: 'success',
+          title: 'Deleted!',
+          text: 'The appointment has been deleted.',
+        });
+        fetchAppointments();
+      } catch (error) {
+        showSwal({
+          icon: 'error',
+          title: 'Error',
+          text: `Failed to delete appointment: ${error.message}`,
+        });
+      }
     }
   };
 
@@ -127,14 +112,50 @@ const EditAppointment = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      console.log('Update successful:', response.data);
-      setConfirmationDialog({ open: true, message: 'Update successful!', success: true });
+      showSwal({
+        icon: 'success',
+        title: 'Success',
+        text: 'Appointment updated successfully!',
+      });
       setOpen(false);
       fetchAppointments();
     } catch (err) {
-      console.error('Update failed:', err);
-      setConfirmationDialog({ open: true, message: 'Update failed. Please check the data and try again.', success: false });
+      showSwal({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to update appointment. Please check the data and try again.',
+      });
     }
+  };
+
+  const handleSearch = (e) => {
+    const term = e.target.value.toLowerCase();
+    setSearchTerm(term);
+    setFilteredAppointments(
+      appointments.filter((appointment) =>
+        appointment.Name.toLowerCase().includes(term)
+      )
+    );
+  };
+
+  const formatToLocalDateTime = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr); // Parse date string
+    const tzOffset = date.getTimezoneOffset() * 60000; // Offset in milliseconds
+    const localDate = new Date(date.getTime() - tzOffset); // Adjust to local time
+    return localDate.toISOString().slice(0, 16); // Format as YYYY-MM-DDTHH:mm
+  };
+
+  const handleEditClick = (row) => {
+    setEditing({
+      ...row,
+      DateSigned: row.DateSigned
+        ? new Date(row.DateSigned).toISOString().slice(0, 10) // Format as YYYY-MM-DD
+        : '',
+      releasedAt: formatToLocalDateTime(row.releasedAt), // Convert to local time for datetime-local input
+      remarks: row.remarks || '', // Ensure remarks is included with a default value
+    });
+    setOpen(true);
   };
 
   const handleChange = (e) => {
@@ -174,7 +195,7 @@ const EditAppointment = () => {
         />
 
         <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <TableContainer component={Paper} sx={{ maxHeight: 700, width: '100%', maxWidth: 1800 }}>
+          <TableContainer component={Paper} sx={{ maxHeight: 650, width: '100%', maxWidth: 1800 }}>
             <Table>
               <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableRow>

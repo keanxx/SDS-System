@@ -15,6 +15,7 @@ import {
 import axios from 'axios';
 import BulkAppointmentUpload from '../AdminComponents/BulkAppointment';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2'; // Import SweetAlert2
 
 const CreateAppointment = () => {
   const [pdfFile, setPdfFile] = useState(null);
@@ -34,14 +35,108 @@ const CreateAppointment = () => {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-  const upperCaseValue = e.target.value.toUpperCase(); // Convert input to uppercase
-  setFormData((prev) => ({
-    ...prev,
-    [e.target.name]: upperCaseValue, // Update state with uppercase value
-  }));
-};
+    const upperCaseValue = e.target.value.toUpperCase(); // Convert input to uppercase
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: upperCaseValue, // Update state with uppercase value
+    }));
+  };
+
+  const validateForm = () => {
+    // Validation rules for each field
+    if (!formData.name) {
+      Swal.fire({
+        title: 'Validation Error',
+        text: 'Name is required.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return false;
+    }
+
+    if (!formData.positionTitle) {
+      Swal.fire({
+        title: 'Validation Error',
+        text: 'Position Title is required.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return false;
+    }
+
+    if (!formData.statusOfAppointment) {
+      Swal.fire({
+        title: 'Validation Error',
+        text: 'Status of Appointment is required.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return false;
+    }
+
+    if (!formData.schoolOffice) {
+      Swal.fire({
+        title: 'Validation Error',
+        text: 'School/Office is required.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return false;
+    }
+
+    if (!formData.district) {
+      Swal.fire({
+        title: 'Validation Error',
+        text: 'District is required.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return false;
+    }
+
+    if (!formData.natureAppointment) {
+      Swal.fire({
+        title: 'Validation Error',
+        text: 'Nature of Appointment is required.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return false;
+    }
+
+    if (!formData.itemNo) {
+      Swal.fire({
+        title: 'Validation Error',
+        text: 'Item No. is required.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return false;
+    }
+
+    if (!formData.dateSigned) {
+      Swal.fire({
+        title: 'Validation Error',
+        text: 'Date Signed is required.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+      return false;
+    }
+
+    
+
+    return true; // All validations passed
+  };
+
 const handleSubmit = async (e) => {
   e.preventDefault();
+
+  // Run validation before submitting
+  if (!validateForm()) {
+    return; // Stop submission if validation fails
+  }
+
   console.log('Form Data:', formData); // Log the form data
 
   try {
@@ -59,7 +154,15 @@ const handleSubmit = async (e) => {
       },
     });
 
-    alert('Appointment submitted successfully!');
+    // Show success alert using Swal
+    Swal.fire({
+      title: 'Success!',
+      text: 'Appointment submitted successfully!',
+      icon: 'success',
+      confirmButtonText: 'OK',
+    });
+
+    // Reset form after successful submission
     setFormData({
       name: '',
       positionTitle: '',
@@ -74,7 +177,24 @@ const handleSubmit = async (e) => {
     setPdfFile(null);
   } catch (error) {
     console.error('Error submitting data:', error); // Log the error
-    alert('Failed to submit data.');
+
+    // Check for duplicate entry error (status 400)
+    if (error.response && error.response.status === 400) {
+      Swal.fire({
+        title: 'Duplicate Entry',
+        text: error.response.data.message || 'An appointment with this Name or Item No. already exists.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+      });
+    } else {
+      // Show generic error alert for other errors
+      Swal.fire({
+        title: 'Error!',
+        text: error.response?.data?.error || 'Failed to submit data. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'Retry',
+      });
+    }
   }
 };
 
@@ -213,36 +333,34 @@ const handleSubmit = async (e) => {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-            
 
             {/* PDF Upload */}
-           <Grid item xs={12}>
-  <Button
-    variant="outlined"
-    component="label"
-    sx={{ minWidth: 250, maxWidth: 400, width: '100%' }} // <-- max width set
-    fullWidth
-  >
-    Upload PDF
-    <input
-      type="file"
-      accept="application/pdf"
-      hidden
-      onChange={(e) => setPdfFile(e.target.files[0])}
-    />
-  </Button>
+            <Grid item xs={12}>
+              <Button
+                variant="outlined"
+                component="label"
+                sx={{ minWidth: 250, maxWidth: 400, width: '100%' }}
+                fullWidth
+              >
+                Upload PDF
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  hidden
+                  onChange={(e) => setPdfFile(e.target.files[0])}
+                />
+              </Button>
 
-  {pdfFile && (
-    <Typography
-      variant="body2"
-      mt={1}
-      sx={{ maxWidth: 250, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-    >
-      {pdfFile.name}
-    </Typography>
-  )}
-</Grid>
-
+              {pdfFile && (
+                <Typography
+                  variant="body2"
+                  mt={1}
+                  sx={{ maxWidth: 250, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                >
+                  {pdfFile.name}
+                </Typography>
+              )}
+            </Grid>
           </Grid>
           <Box mt={3}>
             <Button type="submit" variant="contained" color="primary" fullWidth>

@@ -110,6 +110,7 @@ router.get('/appointment/:id/release-info', (req, res) => {
   });
 });
 
+
 // Create appointment (with optional PDF)
 router.post('/appointment', upload.single('pdf'), (req, res) => {
   console.log('Request Body:', req.body); // Log the request body
@@ -129,23 +130,45 @@ router.post('/appointment', upload.single('pdf'), (req, res) => {
 
   const pdfPath = req.file ? `uploads/appointments/${req.file.filename}` : null;
 
-  const sql = `
-    INSERT INTO \`appointment_details\` 
-    (Name, PositionTitle, SchoolOffice, District, StatusOfAppointment, NatureAppointment, ItemNo, DateSigned, pdfPath, remarks)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  // Step 1: Check if the appointment already exists
+  const checkSql = `
+    SELECT * FROM \`appointment_details\` 
+    WHERE \`ItemNo\` = ?
   `;
 
-  db.query(
-    sql,
-    [name, positionTitle, schoolOffice, district, statusOfAppointment, natureAppointment, itemNo, dateSigned, pdfPath, remarks], // Include remarks here
-    (err, result) => {
-      if (err) {
-        console.error('Database Insert Error:', err); // Log the database error
-        return res.status(500).json({ error: 'Database insert error.' });
-      }
-      res.status(201).json({ message: 'Appointment created successfully!', id: result.insertId });
+  db.query(checkSql, [itemNo], (checkErr, checkResult) => {
+    if (checkErr) {
+      console.error('Database Check Error:', checkErr); // Log the database error
+      return res.status(500).json({ error: 'Database check error.' });
     }
-  );
+
+    if (checkResult.length > 0) {
+      // Duplicate found
+      return res.status(400).json({
+        error: 'Appointment already exists.',
+        message: 'An appointment with this Item No. already exists.'
+      });
+    }
+
+    // Step 2: Insert the new appointment if no duplicate is found
+    const insertSql = `
+      INSERT INTO \`appointment_details\` 
+      (Name, PositionTitle, SchoolOffice, District, StatusOfAppointment, NatureAppointment, ItemNo, DateSigned, pdfPath, remarks)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+      insertSql,
+      [name, positionTitle, schoolOffice, district, statusOfAppointment, natureAppointment, itemNo, dateSigned, pdfPath, remarks],
+      (insertErr, result) => {
+        if (insertErr) {
+          console.error('Database Insert Error:', insertErr); // Log the database error
+          return res.status(500).json({ error: 'Database insert error.' });
+        }
+        res.status(201).json({ message: 'Appointment created successfully!', id: result.insertId });
+      }
+    );
+  });
 });
 
 // Update appointment (with optional PDF replacement)
@@ -487,5 +510,42 @@ router.get('/appointment/:id/release-info', (req, res) => {
   });
 });
 
+router.post('/check-existence', async (req, res) => {
+  try {
+    const { name, itemNo } = req.body;
+
+    // Ensure required fields are provided
+    if (!name && !itemNo) {
+      return res.status(400).json({
+        error: 'Both name and itemNo are required for validation.',
+      });
+    }
+
+    // Query to check for existence
+    const [rows] = await db.query(
+      `SELECT * FROM appointments WHERE name = ? OR itemNo = ?`,
+      [name, itemNo]
+    );
+
+    // If a matching record is found
+    if (rows.length > 0) {
+      return res.status(200).json({
+        exists: true,
+        message: 'An appointment with this Name or Item No. already exists.',
+      });
+    }
+
+    // If no matching record is found
+    return res.status(200).json({
+      exists: false,
+      message: 'No duplicate appointment found.',
+    });
+  } catch (error) {
+    console.error('Error checking appointment existence:', error);
+    return res.status(500).json({
+      error: 'Internal server error. Please try again later.',
+    });
+  }
+});
 
 module.exports = router;

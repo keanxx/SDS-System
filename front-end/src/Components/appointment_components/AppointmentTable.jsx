@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
+import { useQuery } from '@tanstack/react-query';
 import {
-  Box, Typography, Table,  TableBody,  TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, FormControl, Select,
+  Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, FormControl, Select,
   MenuItem,
   InputLabel,
   TextField,
@@ -12,45 +13,60 @@ import {
   DialogTitle,
 } from '@mui/material';
 
-const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [positionOptions, setPositionOptions] = useState([]);
+const fetchAppointments = async (baseURL) => {
+  const { data } = await axios.get(`${baseURL}/api/appointments`);
+  return data;
+};
 
-  const [natureOptions, setNatureOptions] = useState([]);
-  const [statusOptions, setStatusOptions] = useState([]);
-  const [districtOptions, setDistrictOptions] = useState([]);
+const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
   const [selectedNature, setSelectedNature] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [selectedReleaseStatus, setSelectedReleaseStatus] = useState(''); // Dropdown filter for release status
-  const [selectedPosition, setSelectedPosition] = useState(''); // Dropdown filter for position
+  const [selectedReleaseStatus, setSelectedReleaseStatus] = useState('');
+  const [selectedPosition, setSelectedPosition] = useState('');
   const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [releaseInfo, setReleaseInfo] = useState(null);
   const baseURL = import.meta.env.VITE_API_URL;
 
-  useEffect(() => {
-    axios.get(`${baseURL}/api/appointments`)
-      .then((res) => {
-        console.log('Debugging appointments:', res.data); // Debugging
-        setAppointments(res.data);
-        setLoading(false);
-        const uniquePositions = [...new Set(res.data.map(item => item.PositionTitle))];
-        const uniqueNature = [...new Set(res.data.map(item => item.NatureAppointment))];
-        const uniqueStatus = [...new Set(res.data.map(item => item.StatusOfAppointment))];
-        const uniqueDistricts = [...new Set(res.data.map(item => item.District))];
-        setNatureOptions(uniqueNature);
-        setStatusOptions(uniqueStatus);
-        setDistrictOptions(uniqueDistricts);
-        setPositionOptions(uniquePositions);
-      })
-      .catch((err) => {
-        console.error('Error fetching appointments:', err);
-        setLoading(false);
-      });
-  }, []);
+  // Fetch appointments using TanStack Query (Updated to Object form)
+  const { data: appointments = [], isLoading, isError } = useQuery({
+    queryKey: ['appointments'], // Required: Unique key for the query
+    queryFn: () => fetchAppointments(baseURL), // Required: Function to fetch data
+    onError: (err) => {
+      console.error('Error fetching appointments:', err); // Optional: Handle errors
+    },
+  });
+
+  // Extract unique options for dropdowns
+  const positionOptions = [...new Set(appointments.map((item) => item.PositionTitle))];
+  const natureOptions = [...new Set(appointments.map((item) => item.NatureAppointment))];
+  const statusOptions = [...new Set(appointments.map((item) => item.StatusOfAppointment))];
+  const districtOptions = [...new Set(appointments.map((item) => item.District))];
+
+  const filteredAppointments = appointments
+    .filter((row) => {
+      const matchesSearch = Object.values(row).some((value) =>
+        value?.toString().toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      const matchesNature = selectedNature ? row.NatureAppointment === selectedNature : true;
+      const matchesStatus = selectedStatus ? row.StatusOfAppointment === selectedStatus : true;
+      const matchesDistrict = selectedDistrict ? row.District === selectedDistrict : true;
+      const matchesPosition = selectedPosition ? row.PositionTitle === selectedPosition : true;
+      const matchesReleaseStatus =
+        selectedReleaseStatus === 'Released'
+          ? row.releasedAt
+          : selectedReleaseStatus === 'Not Released'
+          ? !row.releasedAt
+          : true;
+      return matchesSearch && matchesNature && matchesStatus && matchesDistrict && matchesReleaseStatus && matchesPosition;
+    })
+    .sort((a, b) => {
+      const surnameA = a.Name.split(' ').slice(-1)[0].toLowerCase();
+      const surnameB = b.Name.split(' ').slice(-1)[0].toLowerCase();
+      return surnameA.localeCompare(surnameB);
+    });
 
   const handleRelease = (appointment) => {
     setSelectedAppointment(appointment);
@@ -58,7 +74,8 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
   };
 
   const confirmRelease = () => {
-    axios.post(`${baseURL}/api/appointment/${selectedAppointment.id}/release`)
+    axios
+      .post(`${baseURL}/api/appointment/${selectedAppointment.id}/release`)
       .then(() => {
         const releaseTime = new Date().toLocaleString('en-CA', {
           year: 'numeric',
@@ -70,11 +87,10 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
         });
 
         // Update the appointment locally
-        setAppointments((prev) =>
-          prev.map((app) =>
-            app.id === selectedAppointment.id ? { ...app, releasedAt: releaseTime } : app
-          )
-        );
+        setSelectedAppointment((prev) => ({
+          ...prev,
+          releasedAt: releaseTime,
+        }));
 
         setReleaseDialogOpen(false);
         setSelectedAppointment(null);
@@ -87,11 +103,11 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
 
   const handleViewReleaseInfo = (appointment) => {
     setSelectedAppointment(appointment);
-    axios.get(`${baseURL}/api/appointment/${appointment.id}/release-info`)
+    axios
+      .get(`${baseURL}/api/appointment/${appointment.id}/release-info`)
       .then((res) => {
         const releaseDate = new Date(res.data.releasedAt);
 
-        // Format the date and time
         const formattedDate = releaseDate.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',
@@ -103,11 +119,10 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
           hour12: true,
         });
 
-        // Include remarks in the dialog
         setReleaseInfo({
           date: formattedDate,
           time: formattedTime,
-          remarks: appointment.remarks || 'No remarks available', // Added remarks field
+          remarks: appointment.remarks || 'No remarks available',
         });
 
         setViewDialogOpen(true);
@@ -118,28 +133,23 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
       });
   };
 
-  const filteredAppointments = appointments
-    .filter((row) => {
-      const matchesSearch = Object.values(row).some((value) =>
-        value?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      const matchesNature = selectedNature ? row.NatureAppointment === selectedNature : true;
-      const matchesStatus = selectedStatus ? row.StatusOfAppointment === selectedStatus : true;
-      const matchesDistrict = selectedDistrict ? row.District === selectedDistrict : true;
-      const matchesPosition = selectedPosition ? row.PositionTitle === selectedPosition : true; // Matches based on position dropdown
-      const matchesReleaseStatus =
-        selectedReleaseStatus === 'Released'
-          ? row.releasedAt
-          : selectedReleaseStatus === 'Not Released'
-          ? !row.releasedAt
-          : true; // Matches based on release status dropdown
-      return matchesSearch && matchesNature && matchesStatus && matchesDistrict && matchesReleaseStatus && matchesPosition;
-    })
-    .sort((a, b) => {
-      const surnameA = a.Name.split(' ').slice(-1)[0].toLowerCase(); // Extract surname
-      const surnameB = b.Name.split(' ').slice(-1)[0].toLowerCase(); // Extract surname
-      return surnameA.localeCompare(surnameB); // Compare surnames alphabetically
-    });
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+        <Typography variant="body1" color="error">
+          Failed to load appointments. Please try again later.
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ margin: 'auto', px: { xs: 1, sm: 2, md: 3 }, py: { xs: 1, sm: 2, md: 3 } }}>
@@ -171,7 +181,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
             justifyContent: { xs: 'flex-start', md: 'flex-end' },
           }}
         >
-          <FormControl sx={{ minWidth: 150, flex: 1 }} size="small" fullWidth={true}>
+          <FormControl sx={{ minWidth: 170, flex: 1, maxWidth: 170 }} size="small" fullWidth={true}>
             <InputLabel>Position</InputLabel>
             <Select
               value={selectedPosition}
@@ -184,7 +194,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               ))}
             </Select>
           </FormControl>
-          <FormControl sx={{ minWidth: 150, flex: 1 }} size="small" fullWidth={true}>
+          <FormControl sx={{ minWidth: 170, flex: 1, maxWidth: 170 }} size="small" fullWidth={true}>
             <InputLabel>District</InputLabel>
             <Select
               value={selectedDistrict}
@@ -197,7 +207,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               ))}
             </Select>
           </FormControl>
-          <FormControl sx={{ minWidth: 150, flex: 1 }} size="small" fullWidth={true}>
+          <FormControl sx={{ minWidth: 170, flex: 1, maxWidth: 170 }} size="small" fullWidth={true}>
             <InputLabel>Status of Appointment</InputLabel>
             <Select
               value={selectedStatus}
@@ -210,7 +220,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               ))}
             </Select>
           </FormControl>
-          <FormControl sx={{ minWidth: 150, flex: 1 }} size="small" fullWidth={true}>
+          <FormControl sx={{ minWidth: 170, flex: 1, maxWidth: 170 }} size="small" fullWidth={true}>
             <InputLabel>Nature of Appointment</InputLabel>
             <Select
               value={selectedNature}
@@ -223,7 +233,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               ))}
             </Select>
           </FormControl>
-          <FormControl sx={{ minWidth: 150, flex: 1 }} size="small" fullWidth={true}>
+          <FormControl sx={{ minWidth: 170, flex: 1, maxWidth: 170 }} size="small" fullWidth={true}>
             <InputLabel>Release Status</InputLabel>
             <Select
               value={selectedReleaseStatus}
@@ -239,22 +249,8 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
       </Box>
 
       {/* Table */}
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Box sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
-          <TableContainer
-            component={Paper}
-            elevation={2}
-            sx={{
-              maxHeight: 500,
-              overflow: 'auto',
-              minWidth: { xs: 700, sm: 900 },
-            }}
-          >
-            <Table stickyHeader>
+      <TableContainer component={Paper}>
+       <Table stickyHeader>
               <TableHead>
                 <TableRow sx={{ backgroundColor: '#f0f0f0' }}>
                   <TableCell
@@ -280,53 +276,53 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
                   <TableCell sx={{ whiteSpace: 'nowrap', width: 130, textAlign: 'start' }}><strong>Released</strong></TableCell>
                 </TableRow>
               </TableHead>
-              <TableBody>
-                {filteredAppointments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} align="center">
-                      <Typography variant="body2" sx={{ py: 2 }}>
-                        No appointments found.
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredAppointments.map((row, index) => (
-                    <TableRow
-                      key={row.id} // Ensure `row.id` is unique
-                      sx={{
-                        backgroundColor: index % 2 === 0 ? '#fafafa' : '#fff',
-                        '&:hover': { backgroundColor: '#f5f5f5' },
-                      }}
-                    >
-                      <TableCell
-                        sx={{
-                          whiteSpace: 'nowrap',
-                          position: 'sticky',
-                          left: 0,
-                          backgroundColor: index % 2 === 0 ? '#fafafa' : '#fff',
-                          zIndex: 1,
-                        }}
+          <TableBody>
+            {filteredAppointments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} align="center">
+                  <Typography variant="body2" sx={{ py: 2 }}>
+                    No appointments found.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredAppointments.map((row, index) => (
+                <TableRow
+                  key={row.id} // Ensure `row.id` is unique
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? '#fafafa' : '#fff',
+                    '&:hover': { backgroundColor: '#f5f5f5' },
+                  }}
+                >
+                  <TableCell
+                    sx={{
+                      whiteSpace: 'nowrap',
+                      position: 'sticky',
+                      left: 0,
+                      backgroundColor: index % 2 === 0 ? '#fafafa' : '#fff',
+                      zIndex: 1,
+                    }}
+                  >
+                    {row.pdfPath ? (
+                      <a
+                        href={`${baseURL}/${row.pdfPath}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 500 }}
                       >
-                        {row.pdfPath ? (
-                          <a
-                            href={`${baseURL}/${row.pdfPath}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 500 }}
-                          >
-                            {row.Name}
-                          </a>
-                        ) : row.Name}
-                      </TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.PositionTitle}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.SchoolOffice}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>{row.District}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>{row.StatusOfAppointment}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>{row.NatureAppointment}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>
-                        {row.ItemNo?.replace(' ', '\n')}
-                      </TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {row.Name}
+                      </a>
+                    ) : row.Name}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.PositionTitle}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.SchoolOffice}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>{row.District}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>{row.StatusOfAppointment}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>{row.NatureAppointment}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'start' }}>
+                    {row.ItemNo?.replace(' ', '\n')}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
   {row.DateSigned && !isNaN(new Date(row.DateSigned))
     ? (() => {
         const date = new Date(row.DateSigned);
@@ -338,41 +334,39 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
     : ''}
 </TableCell>
 
-                      <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-                        {row.releasedAt ? (
-                          <Button
-                            variant="contained"
-                            color="secondary"
-                            size="small"
-                            onClick={() => handleViewReleaseInfo(row)}
-                          >
-                            View
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            size="small"
-                            onClick={() => handleRelease(row)}
-                          >
-                            Release
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          {/* Total Data Count */}
-          <Box sx={{ mt: 2, textAlign: { xs: 'center', md: 'end' } }}>
-            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-              Total Entries: {filteredAppointments.length}
-            </Typography>
-          </Box>
-        </Box>
-      )}
+                  <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+                    {row.releasedAt ? (
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        size="small"
+                        onClick={() => handleViewReleaseInfo(row)}
+                      >
+                        View
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={() => handleRelease(row)}
+                      >
+                        Release
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      {/* Total Data Count */}
+      <Box sx={{ mt: 2, textAlign: { xs: 'center', md: 'end' } }}>
+        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+          Total Entries: {filteredAppointments.length}
+        </Typography>
+      </Box>
 
       {/* Release Confirmation Modal */}
       <Dialog

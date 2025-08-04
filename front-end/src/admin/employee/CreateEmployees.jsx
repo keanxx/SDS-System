@@ -82,8 +82,9 @@ const CreateEmployee = () => {
     try {
       const existingEmployee = employees.find(
         (emp) =>
-          emp.fullname.toLowerCase() === formData.fullName.toLowerCase() ||
-          emp.Initial.toLowerCase() === formData.initial.toLowerCase()
+          emp.uid !== formData.uid && // Exclude the current employee being edited
+          (emp.fullname.toLowerCase() === formData.fullName.toLowerCase() ||
+            emp.Initial.toLowerCase() === formData.initial.toLowerCase())
       );
 
       if (existingEmployee) {
