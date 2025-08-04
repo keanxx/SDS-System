@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Table, TableBody, TableCell,
@@ -19,7 +19,9 @@ const EditAppointment = () => {
   const [confirmationDialog, setConfirmationDialog] = useState({ open: false, message: '', success: false });
   const navigate = useNavigate();
   const baseURL = import.meta.env.VITE_API_URL;
-
+  
+  const fileInputRef = useRef(null);
+  
   const fetchAppointments = async () => {
     const res = await axios.get(`${baseURL}/api/appointments`);
     setAppointments(res.data);
@@ -29,6 +31,35 @@ const EditAppointment = () => {
   useEffect(() => {
     fetchAppointments();
   }, []);
+
+    useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.altKey && e.key === 'u') { // Detect Alt+U
+        e.preventDefault();
+        if (fileInputRef.current) {
+          fileInputRef.current.click(); // Trigger file input click
+        }
+      }
+    };
+     window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+  
+  useEffect(() => {
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && open) { // Check if Enter is pressed and dialog is open
+      e.preventDefault();
+      handleUpdate(); // Trigger the save action
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
+}, [open, editing]); // Dependencies include `open` and `editing`
 
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
@@ -40,16 +71,25 @@ const EditAppointment = () => {
     );
   };
 
+  const formatToLocalDateTime = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr); // Parse date string
+    const tzOffset = date.getTimezoneOffset() * 60000; // Offset in milliseconds
+    const localDate = new Date(date.getTime() - tzOffset); // Adjust to local time
+    return localDate.toISOString().slice(0, 16); // Format as YYYY-MM-DDTHH:mm
+  };
 
-const handleEditClick = (row) => {
-  setEditing({
-    ...row,
-    DateSigned: row.DateSigned
-      ? new Date(row.DateSigned).toLocaleDateString('en-CA') // Format as YYYY-MM-DD in local time
-      : '',
-  });
-  setOpen(true);
-};
+  const handleEditClick = (row) => {
+    setEditing({
+      ...row,
+      DateSigned: row.DateSigned
+        ? new Date(row.DateSigned).toISOString().slice(0, 10) // Format as YYYY-MM-DD
+        : '',
+      releasedAt: formatToLocalDateTime(row.releasedAt), // Convert to local time for datetime-local input
+      remarks: row.remarks || '', // Ensure remarks is included with a default value
+    });
+    setOpen(true);
+  };
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this record?')) {
@@ -61,42 +101,38 @@ const handleEditClick = (row) => {
   const handleUpdate = async () => {
     const formData = new FormData();
 
-    // Map front-end fields to back-end fields
-    const fieldMap = {
-      Name: 'name',
-      PositionTitle: 'positionTitle',
-      SchoolOffice: 'schoolOffice',
-      District: 'district',
-      StatusOfAppointment: 'statusOfAppointment',
-      NatureAppointment: 'natureAppointment',
-      ItemNo: 'itemNo',
-      DateSigned: 'dateSigned',
-      Remarks: 'remarks',
-    };
+    // Add fields to the formData
+    formData.append('name', editing.Name);
+    formData.append('positionTitle', editing.PositionTitle);
+    formData.append('schoolOffice', editing.SchoolOffice);
+    formData.append('district', editing.District);
+    formData.append('statusOfAppointment', editing.StatusOfAppointment);
+    formData.append('natureAppointment', editing.NatureAppointment);
+    formData.append('itemNo', editing.ItemNo);
+    formData.append('dateSigned', editing.DateSigned);
+    formData.append(
+      'released',
+      editing.releasedAt
+        ? new Date(editing.releasedAt).toISOString().slice(0, 19).replace('T', ' ') // Convert local to UTC for backend
+        : ''
+    );
+    formData.append('remarks', editing.remarks || ''); // Include remarks
 
-    // Append fields to formData
-    for (let key in fieldMap) {
-      const frontendValue = editing[key];
-      formData.append(fieldMap[key], frontendValue || '');
-    }
-
-    // Attach PDF if replaced
     if (editing.pdf) {
-      formData.append('pdf', editing.pdf); // attach if replaced
+      formData.append('pdf', editing.pdf);
     }
 
     try {
-      // Send update request to the backend
       const response = await axios.put(`${baseURL}/api/appointment/${editing.id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      console.log('Update successful:', response.data); // Log success response
+      console.log('Update successful:', response.data);
       setConfirmationDialog({ open: true, message: 'Update successful!', success: true });
-      setOpen(false); // Close modal/dialog
-      fetchAppointments(); // Refresh appointments list
+      setOpen(false);
+      fetchAppointments();
     } catch (err) {
-      console.error('Update failed:', err); // Log error
+      console.error('Update failed:', err);
       setConfirmationDialog({ open: true, message: 'Update failed. Please check the data and try again.', success: false });
     }
   };
@@ -112,7 +148,6 @@ const handleEditClick = (row) => {
 
   return (
     <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignContent: 'center' }}>
-      {/* Header with Navbar */}
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
@@ -129,7 +164,6 @@ const handleEditClick = (row) => {
           Appointment Management
         </Typography>
 
-        {/* Search Box */}
         <TextField
           fullWidth
           margin="normal"
@@ -139,9 +173,8 @@ const handleEditClick = (row) => {
           sx={{ width: '70%', maxWidth: 1200 }}
         />
 
-        {/* Table Container centered */}
         <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <TableContainer component={Paper} sx={{ maxHeight: 500, width: '100%', maxWidth: 1800 }}>
+          <TableContainer component={Paper} sx={{ maxHeight: 700, width: '100%', maxWidth: 1800 }}>
             <Table>
               <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableRow>
@@ -158,61 +191,60 @@ const handleEditClick = (row) => {
                 </TableRow>
               </TableHead>
 
-             <TableBody>
-  {filteredAppointments
-    .sort((a, b) => new Date(b.DateSigned) - new Date(a.DateSigned)) // Sort by DateSigned in descending order
-    .map((row) => (
-      <TableRow key={row.id}>
-        <TableCell>{row.Name}</TableCell>
-        <TableCell>{row.PositionTitle}</TableCell>
-        <TableCell>{row.SchoolOffice}</TableCell>
-        <TableCell>{row.District}</TableCell>
-        <TableCell>{row.StatusOfAppointment}</TableCell>
-        <TableCell>{row.NatureAppointment}</TableCell>
-        <TableCell>{row.ItemNo}</TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          {row.DateSigned && !isNaN(new Date(row.DateSigned))
-            ? (() => {
-                const date = new Date(row.DateSigned);
-                const month = date.toLocaleString('en-US', { month: 'short' }); // e.g., "Jul"
-                const day = String(date.getDate()).padStart(2, '0');             // e.g., "30"
-                const year = date.getFullYear();                                 // e.g., "2025"
-                return `${month}-${day}-${year}`;
-              })()
-            : ''}
-        </TableCell>
-        <TableCell>
-          {row.pdfPath ? (
-            <a
-              href={`${baseURL}/${row.pdfPath}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              View
-            </a>
-          ) : (
-            'No PDF Available'
-          )}
-        </TableCell>
-        <TableCell sx={{ display: 'flex', alignContent: 'start' }}>
-          <IconButton onClick={() => handleEditClick(row)}>
-            <Edit />
-          </IconButton>
-          <IconButton
-            onClick={() => handleDelete(row.id)}
-            color="error"
-          >
-            <Delete />
-          </IconButton>
-        </TableCell>
-      </TableRow>
-    ))}
-</TableBody>
+              <TableBody>
+                {filteredAppointments
+                  .sort((a, b) => new Date(b.DateSigned) - new Date(a.DateSigned))
+                  .map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell>{row.Name}</TableCell>
+                      <TableCell>{row.PositionTitle}</TableCell>
+                      <TableCell>{row.SchoolOffice}</TableCell>
+                      <TableCell>{row.District}</TableCell>
+                      <TableCell>{row.StatusOfAppointment}</TableCell>
+                      <TableCell>{row.NatureAppointment}</TableCell>
+                      <TableCell>{row.ItemNo}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {row.DateSigned && !isNaN(new Date(row.DateSigned))
+                          ? (() => {
+                              const date = new Date(row.DateSigned);
+                              const month = date.toLocaleString('en-US', { month: 'short' });
+                              const day = String(date.getDate()).padStart(2, '0');
+                              const year = date.getFullYear();
+                              return `${month}-${day}-${year}`;
+                            })()
+                          : ''}
+                      </TableCell>
+                      <TableCell>
+                        {row.pdfPath ? (
+                          <a
+                            href={`${baseURL}/${row.pdfPath}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          'No PDF Available'
+                        )}
+                      </TableCell>
+                      <TableCell sx={{ display: 'flex', alignContent: 'start' }}>
+                        <IconButton onClick={() => handleEditClick(row)}>
+                          <Edit />
+                        </IconButton>
+                        <IconButton
+                          onClick={() => handleDelete(row.id)}
+                          color="error"
+                        >
+                          <Delete />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
             </Table>
           </TableContainer>
         </Box>
 
-        {/* Edit Dialog */}
         <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
           <DialogTitle>Edit Appointment</DialogTitle>
           <DialogContent>
@@ -229,7 +261,6 @@ const handleEditClick = (row) => {
               />
             ))}
 
-            {/* Dropdowns */}
             <FormControl fullWidth margin="dense">
               <InputLabel>Status of Appointment</InputLabel>
               <Select
@@ -279,18 +310,39 @@ const handleEditClick = (row) => {
               label="Date Signed"
               type="date"
               fullWidth
-              value={editing?.DateSigned ? editing.DateSigned.slice(0, 10) : ''}
+              value={editing?.DateSigned || ''}
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
             />
 
-            {/* PDF Upload */}
+            <TextField
+              margin="dense"
+              name="releasedAt"
+              label="Release Date"
+              type="datetime-local"
+              fullWidth
+              value={editing?.releasedAt || ''}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+            />
+
+            <TextField
+              margin="dense"
+              name="remarks"
+              label="Remarks"
+              type="text"
+              fullWidth
+              value={editing?.remarks || ''}
+              onChange={handleChange}
+            />
+
             <Button variant="outlined" component="label" sx={{ mt: 2 }}>
               Upload PDF
               <input
                 type="file"
                 accept="application/pdf"
                 hidden
+                 ref={fileInputRef}
                 onChange={(e) =>
                   setEditing((prev) => ({ ...prev, pdf: e.target.files[0] }))
                 }
@@ -310,7 +362,6 @@ const handleEditClick = (row) => {
           </DialogActions>
         </Dialog>
 
-        {/* Confirmation Dialog */}
         <Dialog
           open={confirmationDialog.open}
           onClose={handleConfirmationClose}

@@ -18,6 +18,7 @@ import CreateOrder from './admin/order_admin/CreateOrder';
 import OrderDashboard from './Pages/order/OrderDashboard';
 import EditOrder from './admin/order_admin/EditOrder';
 import Footer from './Components/Footer'; // make sure path is correct
+import CreateEmployee from './admin/employee/CreateEmployees';
 
 const App = () => {
   return (
@@ -51,6 +52,7 @@ const App = () => {
 
             {/* admin order system */}
             <Route path="/createOrder" element={<CreateOrder />} />
+            <Route path="/employees" element={<CreateEmployee />} />
           </Routes>
         </main>
         <Footer className="fixed bottom-0 left-0 right-0" />

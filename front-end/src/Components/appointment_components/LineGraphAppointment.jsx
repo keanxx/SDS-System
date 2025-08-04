@@ -103,14 +103,28 @@ const LineGraphAppointment = () => {
   }, [appointments, selectedYear]);
 
   return (
-    <Box sx={{ maxWidth: 900, mx: 'auto', p: 3, boxShadow: 2, bgcolor: 'white', borderRadius: 2 }}>
-      <Typography variant="h5" mb={2}>
-        Monthly Appointment Count
-      </Typography>
+    <Box
+      sx={{
+        maxWidth: 900,
+        mx: 'auto',
+        p: 3,
+        boxShadow: 2,
+        bgcolor: 'white',
+        borderRadius: 2,
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3,
+        }}
+      >
+        <Typography variant="h5">Monthly Appointment Count</Typography>
 
-      {/* Year Filter */}
-      <Box sx={{ maxWidth: 200, mb: 3 }}>
-        <FormControl fullWidth>
+        {/* Year Filter */}
+        <FormControl sx={{ minWidth: 150 }}>
           <InputLabel>Year</InputLabel>
           <Select
             value={selectedYear}

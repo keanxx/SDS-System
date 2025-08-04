@@ -149,7 +149,6 @@ router.post('/appointment', upload.single('pdf'), (req, res) => {
 });
 
 // Update appointment (with optional PDF replacement)
-// Update appointment (with optional PDF replacement)
 router.put('/appointment/:id', upload.single('pdf'), (req, res) => {
   const id = req.params.id;
 
@@ -158,16 +157,19 @@ router.put('/appointment/:id', upload.single('pdf'), (req, res) => {
     name,
     positionTitle,
     schoolOffice,
-    district, // Added missing field mapping
+    district,
     statusOfAppointment,
     natureAppointment,
     itemNo,
-    dateSigned, // This requires formatting
-    remarks
+    dateSigned,
+    remarks,
+    released, // Extract released, but handle it separately
   } = req.body;
 
   // Format dateSigned to MySQL-compatible format (YYYY-MM-DD HH:MM:SS)
-  const formattedDateSigned = new Date(dateSigned).toISOString().slice(0, 19).replace('T', ' ');
+  const formattedDateSigned = dateSigned
+    ? new Date(dateSigned).toISOString().slice(0, 19).replace('T', ' ')
+    : null;
 
   // Handle PDF upload path
   const pdfPath = req.file ? `uploads/appointments/${req.file.filename}` : null;
@@ -182,13 +184,14 @@ router.put('/appointment/:id', upload.single('pdf'), (req, res) => {
     statusOfAppointment,
     natureAppointment,
     itemNo,
-    dateSigned: formattedDateSigned, // Log formatted date
+    dateSigned: formattedDateSigned,
     remarks,
+    released,
     file: req.file ? req.file.filename : null,
   });
 
-  // SQL query to update appointment details
-  const sql = `
+  // Update appointment_details table
+  const updateAppointmentDetailsSQL = `
     UPDATE \`appointment_details\`
     SET 
       Name = ?, 
@@ -199,38 +202,81 @@ router.put('/appointment/:id', upload.single('pdf'), (req, res) => {
       NatureAppointment = ?, 
       ItemNo = ?, 
       DateSigned = ?, 
-      Remarks = ?, 
+      remarks = ?, 
       pdfPath = COALESCE(?, pdfPath)
     WHERE id = ?
   `;
 
-  // Execute query with values
-  db.query(
-    sql,
-    [
-      name,
-      positionTitle,
-      schoolOffice,
-      district,
-      statusOfAppointment,
-      natureAppointment,
-      itemNo,
-      formattedDateSigned, // Use the formatted date
-      remarks,
-      pdfPath,
-      id
-    ],
-    (err, result) => {
-      if (err) {
-        // Log SQL error for debugging
-        console.error('Database error:', err.sqlMessage);
-        return res.status(500).json({ error: 'Database error.', details: err.sqlMessage });
-      }
+  const appointmentDetailsValues = [
+    name,
+    positionTitle,
+    schoolOffice,
+    district,
+    statusOfAppointment,
+    natureAppointment,
+    itemNo,
+    formattedDateSigned,
+    remarks,
+    pdfPath,
+    id,
+  ];
+
+  db.query(updateAppointmentDetailsSQL, appointmentDetailsValues, (err, result) => {
+    if (err) {
+      console.error('Database error:', err.sqlMessage);
+      return res.status(500).json({ error: 'Database error.', details: err.sqlMessage });
+    }
+
+    // If `released` is provided, update the appointment_releases table
+    if (released) {
+      const updateReleaseSQL = `
+        UPDATE \`appointment_releases\`
+        SET releasedAt = ?
+        WHERE appointmentId = ?
+      `;
+
+      const releaseValues = [released, id];
+
+      db.query(updateReleaseSQL, releaseValues, (releaseErr, releaseResult) => {
+        if (releaseErr) {
+          console.error('Release update error:', releaseErr.sqlMessage);
+          return res.status(500).json({ error: 'Release update error.', details: releaseErr.sqlMessage });
+        }
+
+        res.status(200).json({ message: 'Appointment and release updated successfully!' });
+      });
+    } else {
       res.status(200).json({ message: 'Appointment updated successfully!' });
     }
-  );
+  });
 });
 
+// Update releasedAt for an appointment
+router.put('/appointment/:id/release', (req, res) => {
+  const id = req.params.id;
+  const { releasedAt } = req.body;
+
+  if (!releasedAt) {
+    return res.status(400).json({ error: 'releasedAt field is required.' });
+  }
+
+  const sqlCheck = 'SELECT id FROM `appointment_releases` WHERE appointmentId = ?';
+  db.query(sqlCheck, [id], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error during check.' });
+    if (results.length === 0) return res.status(404).json({ error: 'Release information not found for this appointment.' });
+
+    const sqlUpdate = `
+      UPDATE \`appointment_releases\`
+      SET releasedAt = ?
+      WHERE appointmentId = ?
+    `;
+
+    db.query(sqlUpdate, [releasedAt, id], (updateErr) => {
+      if (updateErr) return res.status(500).json({ error: 'Database error during update.' });
+      res.status(200).json({ message: 'Release date updated successfully!' });
+    });
+  });
+});
 
 // Delete appointment + delete PDF if exists
 router.delete('/appointment/:id', (req, res) => {
