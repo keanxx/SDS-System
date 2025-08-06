@@ -5,7 +5,7 @@ import {
   TableContainer, TableHead, TableRow, Paper,
   IconButton, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, Button, FormControl,
-  Select, MenuItem, InputLabel, AppBar, Toolbar,
+  Select, MenuItem, InputLabel, AppBar, Toolbar, TableSortLabel
 } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
 import axios from 'axios';
@@ -31,6 +31,7 @@ const EditAppointment = () => {
   const [open, setOpen] = useState(false);
   const [confirmationDialog, setConfirmationDialog] = useState({ open: false, message: '', success: false });
   const navigate = useNavigate();
+  const [sortOrder, setSortOrder] = useState('asc');
   const baseURL = import.meta.env.VITE_API_URL;
 
   const fileInputRef = useRef(null);
@@ -167,6 +168,27 @@ const EditAppointment = () => {
     setConfirmationDialog({ open: false, message: '', success: false });
   };
 
+ const [sortColumn, setSortColumn] = useState(''); // Track the current sorting column
+ // Track the sorting order
+
+// Sorting logic
+const handleSort = (column) => {
+  const isAsc = sortColumn === column && sortOrder === 'asc';
+  setSortOrder(isAsc ? 'desc' : 'asc');
+  setSortColumn(column);
+
+  const sortedAppointments = [...filteredAppointments].sort((a, b) => {
+    const valueA = a[column] || '';
+    const valueB = b[column] || '';
+    if (typeof valueA === 'string' && typeof valueB === 'string') {
+      return isAsc ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+    }
+    return isAsc ? valueA - valueB : valueB - valueA;
+  });
+
+  setFilteredAppointments(sortedAppointments);
+};
+
   const saveButtonRef = useRef(null);
   // Add keyboard shortcut for Alt+U
   useEffect(() => {
@@ -228,7 +250,15 @@ const EditAppointment = () => {
                   <TableCell sx={{fontWeight: 'bold'}}>District</TableCell>
                   <TableCell sx={{fontWeight: 'bold'}}>Status</TableCell>
                   <TableCell sx={{fontWeight: 'bold'}}>Nature</TableCell>
-                  <TableCell sx={{fontWeight: 'bold'}}>Item No</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+      <TableSortLabel
+        active={sortColumn === 'ItemNo'}
+        direction={sortColumn === 'ItemNo' ? sortOrder : 'asc'}
+        onClick={() => handleSort('ItemNo')}
+      >
+        Item No
+      </TableSortLabel>
+    </TableCell>
                   <TableCell sx={{fontWeight: 'bold'}}>Date</TableCell>
                   <TableCell sx={{fontWeight: 'bold'}}>PDF</TableCell>
                   <TableCell sx={{fontWeight: 'bold'}}>Date Released</TableCell>
