@@ -33,9 +33,9 @@ const EditAppointment = () => {
   const navigate = useNavigate();
   const [sortOrder, setSortOrder] = useState('asc');
   const baseURL = import.meta.env.VITE_API_URL;
-
+const searchInputRef = useRef(null);
   const fileInputRef = useRef(null);
-
+  
   const fetchAppointments = async () => {
     try {
       const res = await axios.get(`${baseURL}/api/appointments`);
@@ -203,6 +203,13 @@ const handleSort = (column) => {
           saveButtonRef.current.click();
         }
       }
+       if (e.shiftKey && e.key.toLowerCase() === 's') {
+      e.preventDefault(); // Prevent default browser behavior
+      if (searchInputRef.current) {
+        searchInputRef.current.focus(); // Focus the search bar
+      }
+    }
+      
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -237,6 +244,7 @@ const handleSort = (column) => {
           value={searchTerm}
           onChange={handleSearch}
           sx={{ width: '70%', maxWidth: 1200 }}
+           inputRef={searchInputRef} 
         />
 
         <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
