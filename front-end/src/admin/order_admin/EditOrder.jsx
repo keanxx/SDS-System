@@ -5,7 +5,7 @@ import {
   TableContainer, TableHead, TableRow, Paper,
   IconButton, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, Button, FormControl,
-  Select, MenuItem, InputLabel, AppBar, Toolbar,
+  Select, MenuItem, InputLabel, AppBar, Toolbar, Autocomplete
 } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
 import axios from 'axios';
@@ -61,6 +61,7 @@ const EditOrder = () => {
  const handleEditClick = (row) => {
   setEditing({
     ...row,
+    school: row.school_id,
     date_signed: row.date_signed
       ? new Date(row.date_signed).toLocaleDateString('en-CA') // Format as YYYY-MM-DD in local time
       : '',
@@ -243,21 +244,27 @@ const EditOrder = () => {
             ))}
 
             {/* School Dropdown */}
-            <FormControl fullWidth margin="dense">
-              <InputLabel>School</InputLabel>
-              <Select
-                name="school"
-                value={editing?.school || ''}
-                onChange={handleChange}
-              >
-                {schools.map((school) => (
-                  <MenuItem key={school.school_id} value={school.school_id}>
-                    {school.school_name} ({school.district_name})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
+            <Autocomplete
+  options={schools}
+  getOptionLabel={(option) => `${option.school_name} (${option.district_name})`}
+  value={
+    schools.find((school) => school.school_id === editing?.school) || null
+  }
+  onChange={(event, newValue) => {
+    setEditing((prev) => ({
+      ...prev,
+      school: newValue ? newValue.school_id : '',
+    }));
+  }}
+  renderInput={(params) => (
+    <TextField
+      {...params}
+      label="School"
+      margin="dense"
+      fullWidth
+    />
+  )}
+/>
             <TextField
   margin="dense"
   name="date_signed"

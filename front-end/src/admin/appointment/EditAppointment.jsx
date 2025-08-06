@@ -167,6 +167,29 @@ const EditAppointment = () => {
     setConfirmationDialog({ open: false, message: '', success: false });
   };
 
+  const saveButtonRef = useRef(null);
+  // Add keyboard shortcut for Alt+U
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.altKey && e.key.toLowerCase() === 'u') {
+        if (open && fileInputRef.current) {
+          fileInputRef.current.click();
+        }
+      }
+      if (e.key === 'Enter') {
+        if (open && saveButtonRef.current) {
+          saveButtonRef.current.click();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
+
   return (
     <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignContent: 'center' }}>
       <AppBar position="static">
@@ -197,18 +220,19 @@ const EditAppointment = () => {
         <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <TableContainer component={Paper} sx={{ maxHeight: 650, width: '100%', maxWidth: 1800 }}>
             <Table>
-              <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+              <TableHead sx={{ backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Position</TableCell>
-                  <TableCell>Office</TableCell>
-                  <TableCell>District</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Nature</TableCell>
-                  <TableCell>Item No</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>PDF</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}>Name</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}>Position</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}>Office</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}>District</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}>Status</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}>Nature</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}>Item No</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}>Date</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}>PDF</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}>Date Released</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}>Actions</TableCell>
                 </TableRow>
               </TableHead>
 
@@ -247,6 +271,17 @@ const EditAppointment = () => {
                         ) : (
                           'No PDF Available'
                         )}
+                      </TableCell>
+                       <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {row.releasedAt && !isNaN(new Date(row.releasedAt))
+                          ? (() => {
+                              const date = new Date(row.releasedAt);
+                              const month = date.toLocaleString('en-US', { month: 'short' });
+                              const day = String(date.getDate()).padStart(2, '0');
+                              const year = date.getFullYear();
+                              return `${month}-${day}-${year}`;
+                            })()
+                          : ''}
                       </TableCell>
                       <TableCell sx={{ display: 'flex', alignContent: 'start' }}>
                         <IconButton onClick={() => handleEditClick(row)}>
@@ -377,7 +412,7 @@ const EditAppointment = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpen(false)}>Cancel</Button>
-            <Button variant="contained" onClick={handleUpdate}>
+            <Button variant="contained" onClick={handleUpdate} ref={saveButtonRef}>
               Save
             </Button>
           </DialogActions>

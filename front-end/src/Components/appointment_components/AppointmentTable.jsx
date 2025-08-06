@@ -172,18 +172,26 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
           }}
         >
           <FormControl sx={{ minWidth: 170, flex: 1, maxWidth: 170 }} size="small" fullWidth={true}>
-            <InputLabel>Position</InputLabel>
-            <Select
-              value={selectedPosition}
-              onChange={(e) => setSelectedPosition(e.target.value)}
-              label="Position"
-            >
-              <MenuItem value=""><em>All</em></MenuItem>
-              {positionOptions.map((option, idx) => (
-                <MenuItem key={idx} value={option}>{option}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+  <InputLabel>Position</InputLabel>
+  <Select
+    value={selectedPosition}
+    onChange={(e) => setSelectedPosition(e.target.value)}
+    label="Position"
+  >
+    <MenuItem value="">
+      <em>All</em>
+    </MenuItem>
+    {positionOptions
+      .slice() // Create a shallow copy to avoid mutating the original array
+      .sort((a, b) => a.localeCompare(b)) // Sort alphabetically
+      .map((option, idx) => (
+        <MenuItem key={idx} value={option}>
+          {option}
+        </MenuItem>
+      ))}
+  </Select>
+</FormControl>
+
           <FormControl sx={{ minWidth: 170, flex: 1, maxWidth: 170 }} size="small" fullWidth={true}>
             <InputLabel>District</InputLabel>
             <Select
@@ -192,11 +200,15 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               label="District"
             >
               <MenuItem value=""><em>All</em></MenuItem>
-              {districtOptions.map((option, idx) => (
+              {districtOptions
+              .slice()
+              .sort((a, b) => a.localeCompare(b)) // Sort alphabetically
+              .map((option, idx) => (
                 <MenuItem key={idx} value={option}>{option}</MenuItem>
               ))}
             </Select>
           </FormControl>
+
           <FormControl sx={{ minWidth: 170, flex: 1, maxWidth: 170 }} size="small" fullWidth={true}>
             <InputLabel>Status of Appointment</InputLabel>
             <Select
@@ -205,7 +217,10 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               label="Status of Appointment"
             >
               <MenuItem value=""><em>All</em></MenuItem>
-              {statusOptions.map((option, idx) => (
+              {statusOptions
+              .slice()
+              .sort((a, b) => a.localeCompare(b)) // Sort alphabetically
+              .map((option, idx) => (
                 <MenuItem key={idx} value={option}>{option}</MenuItem>
               ))}
             </Select>
@@ -218,7 +233,10 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
               label="Nature of Appointment"
             >
               <MenuItem value=""><em>All</em></MenuItem>
-              {natureOptions.map((option, idx) => (
+              {natureOptions
+              .slice()
+              .sort((a, b) => a.localeCompare(b)) // Sort alphabetically
+              .map((option, idx) => (
                 <MenuItem key={idx} value={option}>{option}</MenuItem>
               ))}
             </Select>
@@ -249,7 +267,7 @@ const AppointmentTable = ({ searchQuery, setSearchQuery }) => {
             component={Paper}
             elevation={2}
             sx={{
-              maxHeight: 500,
+              maxHeight: 650,
               overflow: 'auto',
               minWidth: { xs: 700, sm: 900 },
             }}
