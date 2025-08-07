@@ -1,21 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  TextField,
-  Autocomplete,
-  Button,
-  Box,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Typography,
-  useMediaQuery,
-  Grid
+import {  TextField,  Autocomplete,  Button,  Box,  FormControl,  InputLabel,  MenuItem,  Select,  IconButton, Dialog,  DialogTitle,  DialogContent,  DialogActions,  Typography,  useMediaQuery,  Grid
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete'; // Import Delete Icon
@@ -25,6 +9,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const TravelInput = () => {
   const [travelers, setTravelers] = useState([
@@ -57,54 +42,84 @@ const TravelInput = () => {
     fetchEmployees();
   }, []);
 
-  const handleSubmit = async () => {
-    try {
-      for (const traveler of travelers) {
-        const travelDetails = {
-          employee_ID: traveler.uid,
-          PositionDesignation: traveler.position,
-          Station: traveler.station,
-          Purpose: document.getElementById('purpose').value.trim(),
-          Host: document.getElementById('host').value.trim(),
-          DatesFrom: dayjs(inclusiveDate).format('YYYY-MM-DD'),
-          DatesTo: dayjs(exclusiveDate).format('YYYY-MM-DD'),
-          Destination: document.getElementById('destination').value.trim(),
-          Area: area,
-          sof: document.getElementById('sof').value.trim(),
-        };
+// ...existing code...
+const handleSubmit = async () => {
+  // Validation
+  const missingFields = [];
+  if (!travelers.length || !travelers[0].name) missingFields.push('Traveler Name');
+  if (!travelers[0].position) missingFields.push('Position/Designation');
+  if (!travelers[0].station) missingFields.push('Official/Station');
+  if (!document.getElementById('purpose').value.trim()) missingFields.push('Purpose of Travel');
+  if (!document.getElementById('host').value.trim()) missingFields.push('Host of Activity');
+  if (!inclusiveDate) missingFields.push('Inclusive Date');
+  if (!exclusiveDate) missingFields.push('Exclusive Date');
+  if (!document.getElementById('destination').value.trim()) missingFields.push('Destination');
+  if (!area) missingFields.push('Area');
+  if (!document.getElementById('sof').value.trim()) missingFields.push('Source of Fund');
+ 
 
-        const formData = new FormData();
-        Object.entries(travelDetails).forEach(([key, value]) => {
-          formData.append(key, value);
-        });
+  if (missingFields.length > 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Missing Fields',
+      html: `Please fill in the following fields:<br><b>${missingFields.join(', ')}</b>`,
+      confirmButtonText: 'OK',
+    });
+    return;
+  }
 
-        if (file) formData.append('attachment', file);
+  try {
+    for (const traveler of travelers) {
+      const travelDetails = {
+        employee_ID: traveler.uid,
+        PositionDesignation: traveler.position,
+        Station: traveler.station,
+        Purpose: document.getElementById('purpose').value.trim(),
+        Host: document.getElementById('host').value.trim(),
+        DatesFrom: dayjs(inclusiveDate).format('YYYY-MM-DD'),
+        DatesTo: dayjs(exclusiveDate).format('YYYY-MM-DD'),
+        Destination: document.getElementById('destination').value.trim(),
+        Area: area,
+        sof: document.getElementById('sof').value.trim(),
+      };
 
-        const response = await axios.post(`${baseURL}/api/travels`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+      const formData = new FormData();
+      Object.entries(travelDetails).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
 
-        console.log('Server Response:', response.data);
-      }
+      if (file) formData.append('attachment', file);
 
-      // Show success modal
-      setSuccessDialogOpen(true);
+      const response = await axios.post(`${baseURL}/api/travels`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
-      // Reset state and clear form
-      setTravelers([{ name: '', position: '', station: '', initial: '' }]);
-      setInclusiveDate(null);
-      setExclusiveDate(null);
-      setArea('');
-      document.getElementById('purpose').value = '';
-      document.getElementById('host').value = '';
-      document.getElementById('destination').value = '';
-      document.getElementById('sof').value = '';
-      setFile(null);
-    } catch (err) {
-      console.error('Failed to submit travel details:', err);
-      alert(`Submission failed: ${err.response?.data?.message || err.message}`);
+      Swal.fire({
+        icon: 'success',
+        title: 'Submitted!',
+        text: 'Travel details submitted successfully.',
+        timer: 2000,
+        showConfirmButton: false,
+      });
     }
-  };
+
+    setSuccessDialogOpen(true);
+
+    setTravelers([{ name: '', position: '', station: '', initial: '' }]);
+    setInclusiveDate(null);
+    setExclusiveDate(null);
+    setArea('');
+    document.getElementById('purpose').value = '';
+    document.getElementById('host').value = '';
+    document.getElementById('destination').value = '';
+    document.getElementById('sof').value = '';
+    setFile(null);
+  } catch (err) {
+    console.error('Failed to submit travel details:', err);
+    alert(`Submission failed: ${err.response?.data?.message || err.message}`);
+  }
+};
+// ...existing code...
 
   const handleRemoveTraveler = (index) => {
     const newTravelers = [...travelers];
@@ -391,20 +406,7 @@ const TravelInput = () => {
         </div>
       </div>
 
-      {/* Success Modal */}
-      <Dialog open={successDialogOpen} onClose={() => setSuccessDialogOpen(false)}>
-        <DialogTitle>Success</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Travel details submitted successfully!
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSuccessDialogOpen(false)} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+     
     </div>
   );
 };

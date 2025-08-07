@@ -15,6 +15,7 @@ import { Autocomplete } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import Swal from 'sweetalert2';
 
 const CreateOrder = () => {
   const [formData, setFormData] = useState({
@@ -105,6 +106,7 @@ const handleSchoolChange = (event, newValue) => {
     data.append('address', formData.address);
     data.append('position', formData.position);
     data.append('school', formData.school?.id || ''); // Send school name
+    data.append('district', formData.district?.id || ''); // Send only the district ID
    data.append('date_signed', formData.date_signed ? dayjs(formData.date_signed).format('YYYY-MM-DD') : '');  // Format date_signed
     if (pdfFile) {
       data.append('pdf', pdfFile);
@@ -118,10 +120,24 @@ const handleSchoolChange = (event, newValue) => {
         body: data,
       });
 
+      if (response.status === 409) {
+        // Duplication error
+        const result = await response.json();
+        Swal.fire({
+          icon: 'error',
+          title: 'Duplicate Order',
+          text: result.error,
+        });
+        return;
+      }
+
       if (response.ok) {
         const result = await response.json();
-        console.log(result);
-        alert('Order created successfully!');
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'Order created successfully!',
+        });
         // Reset form fields
         setFormData({
           name: '',
@@ -133,12 +149,20 @@ const handleSchoolChange = (event, newValue) => {
         });
         setPdfFile(null);
       } else {
-        console.error('Failed to create order');
-        alert('Failed to create order. Please try again.');
+        // Show actual error from backend if available
+        const result = await response.json();
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: result.error || 'Failed to create order.',
+        });
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred. Please try again.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An error occurred. Please try again.',
+      });
     }
   };
 

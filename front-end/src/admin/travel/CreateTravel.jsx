@@ -21,7 +21,7 @@ const CreateTravel = () => {
        <div className='w-full flex flex-col items-center justify-center space-y-5'>
         
         <TravelInput />
-        <BulkTravel />
+  
        </div>
 
        

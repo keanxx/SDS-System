@@ -5,7 +5,7 @@ import {
   TableContainer, TableHead, TableRow, Paper,
   IconButton, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, Button, FormControl,
-  Select, MenuItem, InputLabel, AppBar, Toolbar, Autocomplete
+  Select, MenuItem, InputLabel, AppBar, Toolbar, Autocomplete, TableSortLabel
 } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
 import axios from 'axios';
@@ -130,6 +130,34 @@ const EditOrder = () => {
     setEditing((prev) => ({ ...prev, [name]: value }));
   };
 
+   const [sortColumn, setSortColumn] = useState('');
+const [sortOrder, setSortOrder] = useState('asc');
+
+// Sorting logic
+const handleSort = (column) => {
+  const isAsc = sortColumn === column && sortOrder === 'asc';
+  setSortOrder(isAsc ? 'desc' : 'asc');
+  setSortColumn(column);
+
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    let valueA = a[column] || '';
+    let valueB = b[column] || '';
+    // For date, compare as Date objects
+    if (column === 'date_signed') {
+      valueA = new Date(valueA);
+      valueB = new Date(valueB);
+      return isAsc ? valueA - valueB : valueB - valueA;
+    }
+    // For string columns
+    if (typeof valueA === 'string' && typeof valueB === 'string') {
+      return isAsc ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+    }
+    return isAsc ? valueA - valueB : valueB - valueA;
+  });
+
+  setFilteredOrders(sortedOrders);
+};
+
   return (
     <Box sx={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignContent: 'center' }}>
       {/* Header with Navbar */}
@@ -165,16 +193,74 @@ const EditOrder = () => {
             <Table>
               <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Address</TableCell>
-                  <TableCell>Position</TableCell>
-                  <TableCell>School</TableCell>
-                  <TableCell>District</TableCell>
-                  <TableCell>Date Signed</TableCell>
-                  <TableCell>PDF</TableCell>
-                  <TableCell sx={{ display: 'flex', alignContent: 'start' }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
+                  <TableCell>
+      <TableSortLabel
+        active={sortColumn === 'name'}
+        direction={sortColumn === 'name' ? sortOrder : 'asc'}
+        onClick={() => handleSort('name')}
+      >
+        Name
+      </TableSortLabel>
+    </TableCell>
+    <TableCell>
+      <TableSortLabel
+        active={sortColumn === 'address'}
+        direction={sortColumn === 'address' ? sortOrder : 'asc'}
+        onClick={() => handleSort('address')}
+      >
+        Address
+      </TableSortLabel>
+    </TableCell>
+    <TableCell>
+      <TableSortLabel
+        active={sortColumn === 'position'}
+        direction={sortColumn === 'position' ? sortOrder : 'asc'}
+        onClick={() => handleSort('position')}
+      >
+        Position
+      </TableSortLabel>
+    </TableCell>
+    <TableCell>
+      <TableSortLabel
+        active={sortColumn === 'school_name'}
+        direction={sortColumn === 'school_name' ? sortOrder : 'asc'}
+        onClick={() => handleSort('school_name')}
+      >
+        School
+      </TableSortLabel>
+    </TableCell>
+    <TableCell>
+      <TableSortLabel
+        active={sortColumn === 'district_name'}
+        direction={sortColumn === 'district_name' ? sortOrder : 'asc'}
+        onClick={() => handleSort('district_name')}
+      >
+        District
+      </TableSortLabel>
+    </TableCell>
+    <TableCell>
+      <TableSortLabel
+        active={sortColumn === 'date_signed'}
+        direction={sortColumn === 'date_signed' ? sortOrder : 'asc'}
+        onClick={() => handleSort('date_signed')}
+      >
+        Date Signed
+      </TableSortLabel>
+    </TableCell>
+    <TableCell>
+      <TableSortLabel
+        active={sortColumn === 'pdf_path'}
+        direction={sortColumn === 'pdf_path' ? sortOrder : 'asc'}
+        onClick={() => handleSort('pdf_path')}
+      >
+        PDF
+      </TableSortLabel>
+    </TableCell>
+    <TableCell sx={{ display: 'flex', alignContent: 'start' }}>
+      Actions
+    </TableCell>
+  </TableRow>
+</TableHead>
 
               <TableBody>
                 {filteredOrders.map((row) => (

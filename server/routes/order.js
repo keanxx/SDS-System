@@ -51,8 +51,8 @@ router.get('/orders', (req, res) => {
 
 // Create order (with optional PDF)
 router.post('/orders', upload.single('pdf'), (req, res) => {
-  console.log('Request Body:', req.body); // Log the request body
-  console.log('Uploaded File:', req.file); // Log the uploaded file
+  console.log('Request Body:', req.body);
+  console.log('Uploaded File:', req.file);
 
   const {
     name,
@@ -62,26 +62,41 @@ router.post('/orders', upload.single('pdf'), (req, res) => {
     date_signed,
   } = req.body;
 
-  // Format dates to YYYY-MM-DD
-  const formattedDateSigned = date_signed ? new Date(date_signed).toISOString().split('T')[0] : null;
-
-  const pdfPath = req.file ? `uploads/order/${req.file.filename}` : null;
-
-  const sql = `
-    INSERT INTO orders_table
-    (name, address, position, school, date_signed, pdf_path)
-    VALUES (?,  ?, ?, ?, ?, ?)
+  // Duplication check (no district in orders_table)
+  const duplicateSql = `
+    SELECT * FROM orders_table
+    WHERE name = ? AND address = ? AND position = ? AND school = ?
   `;
-
   db.query(
-    sql,
-    [name, address, position, school, formattedDateSigned, pdfPath],
-    (err, result) => {
-      if (err) {
-        console.error('Database Insert Error:', err); // Log the database error
-        return res.status(500).json({ error: 'Database insert error.' });
+    duplicateSql,
+    [name, address, position, school],
+    (dupErr, dupResults) => {
+      if (dupErr) {
+        return res.status(500).json({ error: dupErr.message || 'Database error during duplication check.' });
       }
-      res.status(201).json({ message: 'Order created successfully!', id: result.insertId });
+      if (dupResults.length > 0) {
+        // Return the actual error for frontend
+        return res.status(409).json({ error: 'Duplicate order found with this name, address, position, and school.' });
+      }
+
+      // Proceed with order creation
+      const formattedDateSigned = date_signed ? new Date(date_signed).toISOString().split('T')[0] : null;
+      const pdfPath = req.file ? `uploads/order/${req.file.filename}` : null;
+      const sql = `
+        INSERT INTO orders_table
+        (name, address, position, school, date_signed, pdf_path)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `;
+      db.query(
+        sql,
+        [name, address, position, school, formattedDateSigned, pdfPath],
+        (err, result) => {
+          if (err) {
+            return res.status(500).json({ error: err.message || 'Database insert error.' });
+          }
+          res.status(201).json({ message: 'Order created successfully!', id: result.insertId });
+        }
+      );
     }
   );
 });

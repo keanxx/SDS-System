@@ -128,44 +128,61 @@ if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
 
 // Insert a new travel
 // Modify POST route to handle file
+// Insert a new travel with duplication check
 router.post('/travels', upload.single('attachment'), (req, res) => {
   console.log('Received form data:', req.body);
   console.log('Received file:', req.file?.originalname);
 
   const {
-  employee_ID, PositionDesignation, Station,
-  Purpose, Host, DatesFrom, DatesTo,
-  Destination, Area, sof
-} = req.body;
-
+    employee_ID, PositionDesignation, Station,
+    Purpose, Host, DatesFrom, DatesTo,
+    Destination, Area, sof
+  } = req.body;
 
   const attachmentPath = req.file ? `/uploads/travels/${req.file.filename}` : null;
 
-  const values = [
-    employee_ID, DatesFrom, DatesTo, Purpose,
-    PositionDesignation, Station, Host, sof,
-    Destination, Area, attachmentPath
-  ];
-
-  console.log('SQL INSERT VALUES:', values);
-
-  const sql = `
-    INSERT INTO travelauthority 
-    (employee_ID, DatesFrom, DatesTo, Purpose, PositionDesignation,
-     Station, Host, sof, Destination, Area, Attachment)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  // Define duplication check: same employee, DatesFrom, Purpose, Destination
+  const duplicateSql = `
+    SELECT * FROM travelauthority 
+    WHERE employee_ID = ? AND DatesFrom = ? AND Purpose = ? AND Destination = ?
   `;
+  const duplicateParams = [employee_ID, DatesFrom, Purpose, Destination];
 
-  db.query(sql, values, (err, result) => {
-    if (err) {
-      console.error('INSERT travel error:', err); // <== Catch the MySQL error
-      return res.status(500).json({ error: 'Failed to insert travel', details: err.message });
+  db.query(duplicateSql, duplicateParams, (dupErr, dupResults) => {
+    if (dupErr) {
+      console.error('Duplication check error:', dupErr);
+      return res.status(500).json({ error: 'Database error during duplication check', details: dupErr.message });
+    }
+    if (dupResults.length > 0) {
+      return res.status(409).json({ error: 'Duplicate travel entry found for this employee, date, purpose, and destination.' });
     }
 
-    res.status(201).json({ message: 'Travel added', travelId: result.insertId });
+    // Proceed to insert
+    const values = [
+      employee_ID, DatesFrom, DatesTo, Purpose,
+      PositionDesignation, Station, Host, sof,
+      Destination, Area, attachmentPath
+    ];
+
+    console.log('SQL INSERT VALUES:', values);
+
+    const sql = `
+      INSERT INTO travelauthority 
+      (employee_ID, DatesFrom, DatesTo, Purpose, PositionDesignation,
+       Station, Host, sof, Destination, Area, Attachment)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(sql, values, (err, result) => {
+      if (err) {
+        console.error('INSERT travel error:', err);
+        return res.status(500).json({ error: 'Failed to insert travel', details: err.message });
+      }
+
+      res.status(201).json({ message: 'Travel added', travelId: result.insertId });
+    });
   });
 });
-
 
 //admin edits
 // Update travel record with optional PDF upload
@@ -211,106 +228,6 @@ router.delete('/travels/:id', (req, res) => {
 });
 
 
-  router.post('/travels/bulk-insert', async (req, res) => {
-  console.log('Received bulk data:', req.body);
-  try {
-    const travels = req.body;
-    if (!Array.isArray(travels) || travels.length === 0) {
-      return res.status(400).json({ error: 'No data provided.' });
-    }
 
-    let inserted = 0;
-    let updated = 0;
-    let skipped = 0;
-
-    for (const t of travels) {
-      let employee_ID = t.employee_ID;
-
-      // If employee_ID is not given, try to find using Initial
-      if (!employee_ID && t.Initial) {
-        const [empRows] = await new Promise((resolve, reject) => {
-          db.query('SELECT uid FROM employee WHERE Initial = ?', [t.Initial], (err, rows) => {
-            if (err) reject(err);
-            else resolve([rows]);
-          });
-        });
-
-        if (!empRows.length) {
-          skipped++;
-          continue;
-        }
-
-        employee_ID = empRows[0].uid;
-      }
-
-      if (!employee_ID) {
-        skipped++;
-        continue;
-      }
-
-      try {
-        // Check if record exists
-        const [existingRows] = await new Promise((resolve, reject) => {
-          db.query(
-            `SELECT id FROM travelauthority WHERE employee_ID = ? AND DatesFrom = ? AND DatesTo = ?`,
-            [employee_ID, t.DatesFrom, t.DatesTo],
-            (err, rows) => {
-              if (err) reject(err);
-              else resolve([rows]);
-            }
-          );
-        });
-
-        if (existingRows.length > 0) {
-          // Update existing record
-          const recordId = existingRows[0].id;
-          await new Promise((resolve, reject) => {
-            db.query(
-              `UPDATE travelauthority 
-               SET PositionDesignation = ?, Station = ?, Purpose = ?, Host = ?, sof = ?, Destination = ?, Area = ?
-               WHERE id = ?`,
-              [
-                t.PositionDesignation, t.Station, t.Purpose, t.Host, 
-                t.sof, t.Destination, t.Area, recordId
-              ],
-              (err) => {
-                if (err) reject(err);
-                else resolve();
-              }
-            );
-          });
-          updated++;
-        } else {
-          // Insert new travel record
-          await new Promise((resolve, reject) => {
-            db.query(
-              `INSERT INTO travelauthority 
-                (employee_ID, PositionDesignation, Station, Purpose, Host, sof, DatesFrom, DatesTo, Destination, Area)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [
-                employee_ID, t.PositionDesignation, t.Station, t.Purpose, t.Host,
-                t.sof, t.DatesFrom, t.DatesTo, t.Destination, t.Area
-              ],
-              (err) => {
-                if (err) reject(err);
-                else resolve();
-              }
-            );
-          });
-          inserted++;
-        }
-      } catch (dbErr) {
-        console.error(`Database operation failed for one row:`, dbErr.message);
-        skipped++;
-      }
-    }
-
-    res.json({ message: 'Bulk insert/update complete.', inserted, updated, skipped });
-
-  } catch (err) {
-    console.error('Bulk insert/update error:', err);
-    res.status(500).json({ error: 'Bulk insert/update failed', details: err.message });
-  }
-});
 
 module.exports = router;
