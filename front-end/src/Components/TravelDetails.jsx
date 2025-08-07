@@ -107,127 +107,129 @@ const TravelDetails = ({ searchQuery: initialSearchQuery }) => {
   }
 
   return (
-    <Paper sx={{ p: { xs: 1, sm: 2 }, mt: 2 }}>
-      <Typography variant="h6" mb={2}>
-        Travel Details
-      </Typography>
+  <Paper sx={{ p: { xs: 1, sm: 2 }, mt: 2 }}>
+    <Typography variant="h6" mb={2}>
+      Travel Details
+    </Typography>
+
+    {/* Filters */}
+    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} mb={2}>
+      {/* Search */}
+      <Box flex={1}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Search..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          label="Search"
+          size="small"
+        />
+      </Box>
 
       {/* Filters */}
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={2}
-        mb={2}
-      >
-        <Box flex={1}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            label="Search"
-            size="small"
-          />
-        </Box>
-        <Box flex={1}>
-          <FormControl fullWidth variant="outlined" size="small">
-            <InputLabel id="station-filter-label">Filter by Station</InputLabel>
-            <Select
-              labelId="station-filter-label"
-              value={stationFilter}
-              onChange={(e) => setStationFilter(e.target.value)}
-              label="Filter by Station"
-            >
-              <MenuItem value="">All Stations</MenuItem>
-              {stations.map((station) => (
-                <MenuItem key={station} value={station}>
-                  {station}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-        <Box flex={1}>
-          <FormControl fullWidth variant="outlined" size="small">
-            <InputLabel id="area-filter-label">Filter by Area</InputLabel>
-            <Select
-              labelId="area-filter-label"
-              value={areaFilter}
-              onChange={(e) => setAreaFilter(e.target.value)}
-              label="Filter by Area"
-            >
-              <MenuItem value="">All Areas</MenuItem>
-              {areas.map((area) => (
-                <MenuItem key={area} value={area}>
-                  {area}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-        <Box flex={1}>
-          <FormControl fullWidth variant="outlined" size="small">
-            <InputLabel id="position-filter-label">Filter by Position</InputLabel>
-            <Select
-              labelId="position-filter-label"
-              value={positionFilter}
-              onChange={(e) => setPositionFilter(e.target.value)}
-              label="Filter by Position"
-            >
-              <MenuItem value="">All Positions</MenuItem>
-              {positions.map((position) => (
-                <MenuItem key={position} value={position}>
-                  {position}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      </Stack>
+      <Box flex={1}>
+        <FormControl fullWidth variant="outlined" size="small">
+          <InputLabel id="station-filter-label">Filter by Station</InputLabel>
+          <Select
+            labelId="station-filter-label"
+            value={stationFilter}
+            onChange={(e) => setStationFilter(e.target.value)}
+            label="Filter by Station"
+          >
+            <MenuItem value="">All Stations</MenuItem>
+            {stations.map((station) => (
+              <MenuItem key={station} value={station}>
+                {station}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
 
-      {/* Responsive Table or Accordion */}
-      {!isSmall ? (
-        <TableContainer component={Paper} sx={{ maxHeight: 500, overflowY: 'auto' }}>
+      <Box flex={1}>
+        <FormControl fullWidth variant="outlined" size="small">
+          <InputLabel id="area-filter-label">Filter by Area</InputLabel>
+          <Select
+            labelId="area-filter-label"
+            value={areaFilter}
+            onChange={(e) => setAreaFilter(e.target.value)}
+            label="Filter by Area"
+          >
+            <MenuItem value="">All Areas</MenuItem>
+            {areas.map((area) => (
+              <MenuItem key={area} value={area}>
+                {area}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      <Box flex={1}>
+        <FormControl fullWidth variant="outlined" size="small">
+          <InputLabel id="position-filter-label">Filter by Position</InputLabel>
+          <Select
+            labelId="position-filter-label"
+            value={positionFilter}
+            onChange={(e) => setPositionFilter(e.target.value)}
+            label="Filter by Position"
+          >
+            <MenuItem value="">All Positions</MenuItem>
+            {positions.map((position) => (
+              <MenuItem key={position} value={position}>
+                {position}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+    </Stack>
+
+    {/* Responsive Table or Accordion */}
+    {!isSmall ? (
+      <>
+        <TableContainer component={Paper} sx={{ maxHeight: 650, overflowY: 'auto' }}>
           <Table stickyHeader>
             <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Position</TableCell>
-                <TableCell>Station</TableCell>
-                <TableCell>Purpose / Attachment</TableCell>
-                <TableCell>Host</TableCell>
-                <TableCell>Travel Period</TableCell>
-                <TableCell>Destination</TableCell>
-                <TableCell>Source of Fund</TableCell>
-                <TableCell>Area</TableCell>
+                <TableCell sx={{fontWeight: 'bold', minWidth: 125, whiteSpace: 'nowrap'}}>Name</TableCell>
+                <TableCell sx={{fontWeight: 'bold', minWidth: 200}}>Position</TableCell>
+                <TableCell sx={{fontWeight: 'bold', minWidth: 200}}>Station</TableCell>
+                <TableCell sx={{fontWeight: 'bold', minWidth: 250}}>Purpose</TableCell>
+                <TableCell sx={{fontWeight: 'bold', minWidth: 200}}>Host</TableCell>
+                <TableCell sx={{fontWeight: 'bold', minWidth: 180}}>Travel Period</TableCell>
+                <TableCell sx={{fontWeight: 'bold', minWidth: 200}}>Destination</TableCell>
+                <TableCell sx={{fontWeight: 'bold', minWidth: 140}}>Source of Fund</TableCell>
+                <TableCell sx={{fontWeight: 'bold'}}>Area</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredData.map((row, index) => (
                 <TableRow key={index}>
-                  <TableCell>{row.Fullname}</TableCell>
-                  <TableCell>{row.PositionDesignation}</TableCell>
-                  <TableCell>{row.Station}</TableCell>
-                  <TableCell>
-                    <div>{row.Purpose || 'N/A'}</div>
+                  <TableCell
+                    sx={{
+                      whiteSpace: 'nowrap',
+                      position: 'sticky',
+                      left: 0,
+                      backgroundColor: 'white',
+                      zIndex: 1,
+                    }}
+                  >
                     {row.Attachment ? (
                       <a
                         href={`${baseURL}${row.Attachment}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{
-                          color: '#007BFF',
-                          textDecoration: 'underline',
-                          display: 'inline-block',
-                          marginTop: '4px'
-                        }}
+                        style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 500 }}
                       >
-                        View PDF
+                        {row.Fullname}
                       </a>
-                    ) : (
-                      <div style={{ fontStyle: 'italic', color: '#888' }}>None</div>
-                    )}
+                    ) : row.Fullname}
                   </TableCell>
+                  <TableCell>{row.PositionDesignation}</TableCell>
+                  <TableCell>{row.Station}</TableCell>
+                  <TableCell>{row.Purpose}</TableCell>
                   <TableCell>{row.Host}</TableCell>
                   <TableCell>
                     {row.DatesFrom && row.DatesTo
@@ -249,57 +251,19 @@ const TravelDetails = ({ searchQuery: initialSearchQuery }) => {
             </TableBody>
           </Table>
         </TableContainer>
-      ) : (
-        <Box>
-          {filteredData.length === 0 ? (
-            <Box textAlign="center" py={4}>
-              No records found.
-            </Box>
-          ) : (
-            filteredData.map((row, index) => (
-              <Accordion key={index} sx={{ mb: 1 }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography fontWeight="bold">{row.Fullname}</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Stack spacing={1}>
-                    <Typography variant="body2"><b>Position:</b> {row.PositionDesignation}</Typography>
-                    <Typography variant="body2"><b>Station:</b> {row.Station}</Typography>
-                    <Typography variant="body2"><b>Purpose:</b> {row.Purpose || 'N/A'}</Typography>
-                    <Typography variant="body2">
-                      <b>Attachment:</b>{' '}
-                      {row.Attachment ? (
-                        <a
-                          href={`${baseURL}${row.Attachment}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: '#007BFF', textDecoration: 'underline' }}
-                        >
-                          View PDF
-                        </a>
-                      ) : (
-                        <span style={{ fontStyle: 'italic', color: '#888' }}>None</span>
-                      )}
-                    </Typography>
-                    <Typography variant="body2"><b>Host:</b> {row.Host}</Typography>
-                    <Typography variant="body2">
-                      <b>Travel Period:</b>{' '}
-                      {row.DatesFrom && row.DatesTo
-                        ? `${dayjs(row.DatesFrom).format('MMM DD')} - ${dayjs(row.DatesTo).format('MMM DD, YYYY')}`
-                        : 'N/A'}
-                    </Typography>
-                    <Typography variant="body2"><b>Destination:</b> {row.Destination}</Typography>
-                    <Typography variant="body2"><b>Source of Fund:</b> {row.sof}</Typography>
-                    <Typography variant="body2"><b>Area:</b> {row.Area}</Typography>
-                  </Stack>
-                </AccordionDetails>
-              </Accordion>
-            ))
-          )}
+
+        {/* Total Data Count */}
+        <Box sx={{ mt: 2, textAlign: { xs: 'center', md: 'end' } }}>
+          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+            Total Entries: {filteredData.length}
+          </Typography>
         </Box>
-      )}
-    </Paper>
-  );
+      </>
+    ) : (
+      <Alert severity="info">Use a larger screen to view full travel details.</Alert>
+    )}
+  </Paper>
+);
 };
 
 export default TravelDetails;

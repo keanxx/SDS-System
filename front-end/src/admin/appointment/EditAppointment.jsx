@@ -252,7 +252,13 @@ const handleSort = (column) => {
             <Table>
               <TableHead sx={{ backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>
                 <TableRow>
-                  <TableCell sx={{fontWeight: 'bold'}}>Name</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}><TableSortLabel
+        active={sortColumn === 'Name'}
+        direction={sortColumn === 'Name' ? sortOrder : 'asc'}
+        onClick={() => handleSort('Name')}
+      >
+        Name
+      </TableSortLabel></TableCell>
                   <TableCell sx={{fontWeight: 'bold'}}>Position</TableCell>
                   <TableCell sx={{fontWeight: 'bold'}}>Office</TableCell>
                   <TableCell sx={{fontWeight: 'bold'}}>District</TableCell>
