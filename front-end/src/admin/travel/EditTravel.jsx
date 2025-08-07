@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Paper, TextField, Button, IconButton, Dialog, DialogTitle, DialogActions,
-  TablePagination, FormControl, InputLabel, Select, MenuItem
+  TablePagination, FormControl, InputLabel, Select, MenuItem, TableSortLabel
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -60,6 +60,41 @@ const [editFile, setEditFile] = useState(null);
     setPage(0);
   };
 
+   const [sortColumn, setSortColumn] = useState('');
+  const [sortOrder, setSortOrder] = useState('asc');
+  
+   // Sorting logic
+  const handleSort = (column) => {
+    const isAsc = sortColumn === column && sortOrder === 'asc';
+    setSortOrder(isAsc ? 'desc' : 'asc');
+    setSortColumn(column);
+
+    const sorted = [...filtered].sort((a, b) => {
+      let valueA = a[column] || '';
+      let valueB = b[column] || '';
+      // For fullname, sort case-insensitive
+      if (column === 'fullname') {
+        return isAsc
+          ? valueA.toLowerCase().localeCompare(valueB.toLowerCase())
+          : valueB.toLowerCase().localeCompare(valueA.toLowerCase());
+      }
+      // For date, compare as Date objects
+      if (column === 'date_signed') {
+        valueA = new Date(valueA);
+        valueB = new Date(valueB);
+        return isAsc ? valueA - valueB : valueB - valueA;
+      }
+      // For string columns
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        return isAsc ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+      }
+      return isAsc ? valueA - valueB : valueB - valueA;
+    });
+
+    setFiltered(sorted);
+  };
+  
+
   return (
     <>
     <div className='absulute top-0 left-0 w-full'>
@@ -84,9 +119,28 @@ const [editFile, setEditFile] = useState(null);
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell><strong>Name</strong></TableCell>
-              <TableCell><strong>Position</strong></TableCell>
-              <TableCell><strong>Station</strong></TableCell>
+              <TableCell sx={{fontWeight: 'bold'}}><TableSortLabel
+        active={sortColumn === 'fullname'}
+        direction={sortColumn === 'fullname' ? sortOrder : 'asc'}
+        onClick={() => handleSort('fullname')}
+      >
+        Name
+      </TableSortLabel></TableCell>
+              <TableCell sx={{fontWeight: 'bold'}}><TableSortLabel
+        active={sortColumn === 'PositionDesignation'}
+        direction={sortColumn === 'PositionDesignation' ? sortOrder : 'asc'}
+        onClick={() => handleSort('PositionDesignation')}
+      >
+        Position
+      </TableSortLabel></TableCell>
+              <TableCell sx={{fontWeight: 'bold'}}><TableSortLabel
+        active={sortColumn === 'Station'}
+        direction={sortColumn === 'Station' ? sortOrder : 'asc'}
+        onClick={() => handleSort('Station')}
+      >
+        Station
+      </TableSortLabel></TableCell>
+              <TableCell><strong>Purpose</strong></TableCell>
               <TableCell><strong>Destination</strong></TableCell>
               <TableCell><strong>PDF</strong></TableCell>
               <TableCell><strong>Actions</strong></TableCell>
@@ -98,6 +152,7 @@ const [editFile, setEditFile] = useState(null);
                 <TableCell>{t.fullname || 'N/A'}</TableCell>
                 <TableCell>{t.PositionDesignation}</TableCell>
                 <TableCell>{t.Station}</TableCell>
+                <TableCell>{t.Purpose || 'N/A'}</TableCell>
                 <TableCell>{t.Destination}</TableCell>
                 <TableCell>
                   {t.Attachment ? (

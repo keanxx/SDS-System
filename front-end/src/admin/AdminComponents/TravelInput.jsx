@@ -282,7 +282,7 @@ const handleSubmit = async () => {
               }}
             >
               <DatePicker
-                label="Inclusive Date"
+                label="From"
                 value={inclusiveDate}
                 onChange={(newValue) => setInclusiveDate(newValue)}
                 slotProps={{
@@ -292,7 +292,7 @@ const handleSubmit = async () => {
                 }}
               />
               <DatePicker
-                label="Exclusive Date"
+                label="To"
                 value={exclusiveDate}
                 onChange={(newValue) => setExclusiveDate(newValue)}
                 slotProps={{

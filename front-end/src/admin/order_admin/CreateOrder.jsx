@@ -125,7 +125,7 @@ const handleSchoolChange = (event, newValue) => {
         const result = await response.json();
         Swal.fire({
           icon: 'error',
-          title: 'Duplicate Order',
+          title: 'Duplicate Notice',
           text: result.error,
         });
         return;
@@ -136,7 +136,7 @@ const handleSchoolChange = (event, newValue) => {
         Swal.fire({
           icon: 'success',
           title: 'Success',
-          text: 'Order created successfully!',
+          text: 'Notice created successfully!',
         });
         // Reset form fields
         setFormData({
@@ -154,7 +154,7 @@ const handleSchoolChange = (event, newValue) => {
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: result.error || 'Failed to create order.',
+          text: result.error || 'Failed to create notice.',
         });
       }
     } catch (error) {

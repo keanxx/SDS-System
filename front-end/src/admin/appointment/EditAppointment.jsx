@@ -259,11 +259,41 @@ const handleSort = (column) => {
       >
         Name
       </TableSortLabel></TableCell>
-                  <TableCell sx={{fontWeight: 'bold'}}>Position</TableCell>
-                  <TableCell sx={{fontWeight: 'bold'}}>Office</TableCell>
-                  <TableCell sx={{fontWeight: 'bold'}}>District</TableCell>
-                  <TableCell sx={{fontWeight: 'bold'}}>Status</TableCell>
-                  <TableCell sx={{fontWeight: 'bold'}}>Nature</TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}><TableSortLabel
+        active={sortColumn === 'PositionTitle'}
+        direction={sortColumn === 'PositionTitle' ? sortOrder : 'asc'}
+        onClick={() => handleSort('PositionTitle')}
+      >
+        Position
+      </TableSortLabel></TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}><TableSortLabel
+        active={sortColumn === 'SchoolOffice'}
+        direction={sortColumn === 'SchoolOffice' ? sortOrder : 'asc'}
+        onClick={() => handleSort('SchoolOffice')}
+      >
+        Office
+      </TableSortLabel></TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}><TableSortLabel
+        active={sortColumn === 'District'}
+        direction={sortColumn === 'District' ? sortOrder : 'asc'}
+        onClick={() => handleSort('District')}
+      >
+        District
+      </TableSortLabel></TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}><TableSortLabel
+        active={sortColumn === 'StatusOfAppointment'}
+        direction={sortColumn === 'StatusOfAppointment' ? sortOrder : 'asc'}
+        onClick={() => handleSort('StatusOfAppointment')}
+      >
+        Status
+      </TableSortLabel></TableCell>
+                  <TableCell sx={{fontWeight: 'bold'}}><TableSortLabel
+        active={sortColumn === 'NatureAppointment'}
+        direction={sortColumn === 'NatureAppointment' ? sortOrder : 'asc'}
+        onClick={() => handleSort('NatureAppointment')}
+      >
+        Nature
+      </TableSortLabel></TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>
       <TableSortLabel
         active={sortColumn === 'ItemNo'}
