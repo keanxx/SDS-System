@@ -13,7 +13,7 @@ const Statistics = () => {
 
   return (
     <>
-      <div className="w-full min-h-screen max-h-full flex flex-col justify-center gap-5 bg-white">
+      <div className="w-full min-h-screen max-h-full flex flex-col gap-5 bg-white">
         {/* Header Section */}
         <AppBar position="static"
         sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, backgroundColor: '#1e293b' }}>
