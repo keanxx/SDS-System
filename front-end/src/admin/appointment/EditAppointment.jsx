@@ -415,7 +415,7 @@ const handleSort = (column) => {
                 label="Nature of Appointment"
               >
                 <MenuItem value="ORIGINAL">ORIGINAL</MenuItem>
-                <MenuItem value="PROMOTIONAL">PROMOTIONAL</MenuItem>
+                <MenuItem value="PROMOTION">PROMOTION</MenuItem>
                 <MenuItem value="TRANSFER">TRANSFER</MenuItem>
                 <MenuItem value="REAPPOINTMENT">REAPPOINTMENT</MenuItem>
                 <MenuItem value="RE-EMPLOYMENT">RE-EMPLOYMENT</MenuItem>

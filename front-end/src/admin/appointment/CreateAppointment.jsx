@@ -291,7 +291,7 @@ const handleSubmit = async (e) => {
                 >
                  
                   <MenuItem value="ORIGINAL">ORIGINAL</MenuItem>
-                  <MenuItem value="PROMOTIONAL">PROMOTION</MenuItem>
+                  <MenuItem value="PROMOTION">PROMOTION</MenuItem>
                   <MenuItem value="RECLASSIFICATION">RECLASSIFICATION</MenuItem>
                   <MenuItem value="REAPPOINTMENT">REAPPOINTMENT</MenuItem>
                   
